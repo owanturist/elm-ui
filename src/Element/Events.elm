@@ -1,12 +1,7 @@
 module Element.Events exposing
     ( onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
-    -- , onClickCoords
-    -- , onClickPageCoords
-    -- , onClickScreenCoords
-    -- , onMouseCoords
-    -- , onMousePageCoords
-    -- , onMouseScreenCoords
+    , on
     )
 
 {-|
@@ -21,13 +16,17 @@ module Element.Events exposing
 
 @docs onFocus, onLoseFocus
 
+
+## Custom Events
+
+@docs on
+
 -}
 
 import Element exposing (Attribute)
 import Html.Events
 import Internal.Model as Internal
 import Json.Decode as Json
-import VirtualDom
 
 
 
@@ -77,87 +76,6 @@ onMouseMove msg =
 
 
 
--- onClickWith
---     { button = primary
---     , send = localCoords Button
---     }
--- type alias Click =
---     { button : Button
---     , send : Track
---     }
--- type Button = Primary | Secondary
--- type Track
---     = ElementCoords
---     | PageCoords
---     | ScreenCoords
--- |
-
-
-{-| -}
-onClickCoords : (Coords -> msg) -> Attribute msg
-onClickCoords msg =
-    on "click" (Json.map msg localCoords)
-
-
-{-| -}
-onClickScreenCoords : (Coords -> msg) -> Attribute msg
-onClickScreenCoords msg =
-    on "click" (Json.map msg screenCoords)
-
-
-{-| -}
-onClickPageCoords : (Coords -> msg) -> Attribute msg
-onClickPageCoords msg =
-    on "click" (Json.map msg pageCoords)
-
-
-{-| -}
-onMouseCoords : (Coords -> msg) -> Attribute msg
-onMouseCoords msg =
-    on "mousemove" (Json.map msg localCoords)
-
-
-{-| -}
-onMouseScreenCoords : (Coords -> msg) -> Attribute msg
-onMouseScreenCoords msg =
-    on "mousemove" (Json.map msg screenCoords)
-
-
-{-| -}
-onMousePageCoords : (Coords -> msg) -> Attribute msg
-onMousePageCoords msg =
-    on "mousemove" (Json.map msg pageCoords)
-
-
-type alias Coords =
-    { x : Int
-    , y : Int
-    }
-
-
-screenCoords : Json.Decoder Coords
-screenCoords =
-    Json.map2 Coords
-        (Json.field "screenX" Json.int)
-        (Json.field "screenY" Json.int)
-
-
-{-| -}
-localCoords : Json.Decoder Coords
-localCoords =
-    Json.map2 Coords
-        (Json.field "offsetX" Json.int)
-        (Json.field "offsetY" Json.int)
-
-
-pageCoords : Json.Decoder Coords
-pageCoords =
-    Json.map2 Coords
-        (Json.field "pageX" Json.int)
-        (Json.field "pageY" Json.int)
-
-
-
 -- FOCUS EVENTS
 
 
@@ -202,64 +120,3 @@ It really does help!
 on : String -> Json.Decoder msg -> Attribute msg
 on event decode =
     Internal.Attr <| Html.Events.on event decode
-
-
-
--- {-| Same as `on` but you can set a few options.
--- -}
--- onWithOptions : String -> Html.Events.Options -> Json.Decoder msg -> Attribute msg
--- onWithOptions event options decode =
---     Internal.Attr <| Html.Events.onWithOptions event options decode
--- COMMON DECODERS
-
-
-{-| A `Json.Decoder` for grabbing `event.target.value`. We use this to define
-`onInput` as follows:
-
-    import Json.Decode as Json
-
-    onInput : (String -> msg) -> Attribute msg
-    onInput tagger =
-        on "input" (Json.map tagger targetValue)
-
-You probably will never need this, but hopefully it gives some insights into
-how to make custom event handlers.
-
--}
-targetValue : Json.Decoder String
-targetValue =
-    Json.at [ "target", "value" ] Json.string
-
-
-{-| A `Json.Decoder` for grabbing `event.target.checked`. We use this to define
-`onCheck` as follows:
-
-    import Json.Decode as Json
-
-    onCheck : (Bool -> msg) -> Attribute msg
-    onCheck tagger =
-        on "input" (Json.map tagger targetChecked)
-
--}
-targetChecked : Json.Decoder Bool
-targetChecked =
-    Json.at [ "target", "checked" ] Json.bool
-
-
-{-| A `Json.Decoder` for grabbing `event.keyCode`. This helps you define
-keyboard listeners like this:
-
-    import Json.Decode as Json
-
-    onKeyUp : (Int -> msg) -> Attribute msg
-    onKeyUp tagger =
-        on "keyup" (Json.map tagger keyCode)
-
-**Note:** It looks like the spec is moving away from `event.keyCode` and
-towards `event.key`. Once this is supported in more browsers, we may add
-helpers here for `onKeyUp`, `onKeyDown`, `onKeyPress`, etc.
-
--}
-keyCode : Json.Decoder Int
-keyCode =
-    Json.field "keyCode" Json.int

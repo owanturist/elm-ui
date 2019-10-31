@@ -179,7 +179,7 @@ Alternatively, see if it's reasonable to _not_ display an input if you'd normall
 
 -}
 
-import Element exposing (Attribute, Color, Element)
+import Element exposing (Attribute, Color, Decoration, Element)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
@@ -199,14 +199,17 @@ type Placeholder msg
     = Placeholder (List (Attribute msg)) (Element msg)
 
 
+white : Color
 white =
     Element.rgb 1 1 1
 
 
+darkGrey : Color
 darkGrey =
     Element.rgb (186 / 255) (189 / 255) (182 / 255)
 
 
+charcoal : Color
 charcoal =
     Element.rgb
         (136 / 255)
@@ -295,6 +298,7 @@ labelHidden =
     HiddenLabel
 
 
+hiddenLabelAttribute : Label msg -> Attribute msg
 hiddenLabelAttribute label =
     case label of
         HiddenLabel textLabel ->
@@ -369,6 +373,7 @@ button attrs { onPress, label } =
         (Internal.Unkeyed [ label ])
 
 
+focusDefault : List (Attribute msg) -> Attribute msg
 focusDefault attrs =
     if List.any hasFocusStyle attrs then
         Internal.NoAttribute
@@ -377,6 +382,7 @@ focusDefault attrs =
         Internal.htmlClass "focusable"
 
 
+hasFocusStyle : Attribute msg -> Bool
 hasFocusStyle attr =
     case attr of
         Internal.StyleClass _ (Internal.PseudoSelector Internal.Focus _) ->
@@ -384,15 +390,6 @@ hasFocusStyle attr =
 
         _ ->
             False
-
-
-{-| -}
-type alias Checkbox msg =
-    { onChange : Maybe (Bool -> msg)
-    , icon : Maybe (Element msg)
-    , checked : Bool
-    , label : Label msg
-    }
 
 
 {-|
@@ -771,6 +768,7 @@ slider attributes input =
         )
 
 
+viewHorizontalThumb : Float -> List Decoration -> Maybe Element.Length -> Element msg
 viewHorizontalThumb factor thumbAttributes trackHeight =
     Element.row
         [ Element.width Element.fill
@@ -793,6 +791,7 @@ viewHorizontalThumb factor thumbAttributes trackHeight =
         ]
 
 
+viewVerticalThumb : Float -> List Decoration -> Maybe Element.Length -> Element msg
 viewVerticalThumb factor thumbAttributes trackWidth =
     Element.column
         [ Element.height Element.fill
@@ -836,6 +835,37 @@ type alias Text msg =
     }
 
 
+type alias Box =
+    { top : Int
+    , right : Int
+    , bottom : Int
+    , left : Int
+    }
+
+
+zeroBox : Box
+zeroBox =
+    Box 0 0 0 0
+
+
+getPadding : Attribute msg -> Maybe Box
+getPadding attr =
+    case attr of
+        Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
+            -- The - 3 is here to prevent accidental triggering of scrollbars
+            -- when things are off by a pixel or two.
+            -- (or at least when the browser *thinks* it's off by a pixel or two)
+            Just
+                { top = max 0 (floor (toFloat t - 3))
+                , right = max 0 (floor (toFloat r - 3))
+                , bottom = max 0 (floor (toFloat b - 3))
+                , left = max 0 (floor (toFloat l - 3))
+                }
+
+        _ ->
+            Nothing
+
+
 {-| -}
 textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
 textHelper textInput attrs textOptions =
@@ -847,30 +877,6 @@ textHelper textInput attrs textOptions =
             redistribute (textInput.type_ == TextArea)
                 (isStacked textOptions.label)
                 withDefaults
-
-        onlySpacing attr =
-            case attr of
-                Internal.StyleClass _ (Internal.SpacingStyle _ _ _) ->
-                    True
-
-                _ ->
-                    False
-
-        getPadding attr =
-            case attr of
-                Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
-                    -- The - 3 is here to prevent accidental triggering of scrollbars
-                    -- when things are off by a pixel or two.
-                    -- (or at least when the browser *thinks* it's off by a pixel or two)
-                    Just
-                        { top = max 0 (floor (toFloat t - 3))
-                        , right = max 0 (floor (toFloat r - 3))
-                        , bottom = max 0 (floor (toFloat b - 3))
-                        , left = max 0 (floor (toFloat l - 3))
-                        }
-
-                _ ->
-                    Nothing
 
         heightConstrained =
             case textInput.type_ of
@@ -890,12 +896,7 @@ textHelper textInput attrs textOptions =
                 |> List.filterMap getPadding
                 |> List.reverse
                 |> List.head
-                |> Maybe.withDefault
-                    { top = 0
-                    , right = 0
-                    , bottom = 0
-                    , left = 0
-                    }
+                |> Maybe.withDefault zeroBox
 
         inputElement =
             Internal.element
@@ -1045,6 +1046,7 @@ textHelper textInput attrs textOptions =
         wrappedInput
 
 
+getHeight : Attribute msg -> Maybe Internal.Length
 getHeight attr =
     case attr of
         Internal.Height h ->
@@ -1054,14 +1056,12 @@ getHeight attr =
             Nothing
 
 
-negateBox box =
-    { top = negate box.top
-    , right = negate box.right
-    , bottom = negate box.bottom
-    , left = negate box.left
-    }
+negateBox : Box -> Box
+negateBox { top, right, bottom, left } =
+    Box (negate top) (negate right) (negate bottom) (negate left)
 
 
+renderBox : Box -> String
 renderBox { top, right, bottom, left } =
     String.fromInt top
         ++ "px "
@@ -1073,6 +1073,7 @@ renderBox { top, right, bottom, left } =
         ++ "px"
 
 
+renderPlaceholder : Placeholder msg -> List (Attribute msg) -> Bool -> Element msg
 renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
     Element.el
         (forPlaceholder
@@ -1123,6 +1124,15 @@ calcMoveToCompensateForPadding attrs =
             Element.moveUp (toFloat (floor (toFloat vSpace / 2)))
 
 
+type alias Redistribution msg =
+    { fullParent : List (Attribute msg)
+    , parent : List (Attribute msg)
+    , wrapper : List (Attribute msg)
+    , input : List (Attribute msg)
+    , cover : List (Attribute msg)
+    }
+
+
 {-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
 
 redistribute them to the parent, the input, or the cover.
@@ -1134,17 +1144,7 @@ redistribute them to the parent, the input, or the cover.
   - input -> actual input element
 
 -}
-redistribute :
-    Bool
-    -> Bool
-    -> List (Attribute msg)
-    ->
-        { fullParent : List (Attribute msg)
-        , parent : List (Attribute msg)
-        , wrapper : List (Attribute msg)
-        , input : List (Attribute msg)
-        , cover : List (Attribute msg)
-        }
+redistribute : Bool -> Bool -> List (Attribute msg) -> Redistribution msg
 redistribute isMultiline stacked attrs =
     List.foldl (redistributeOver isMultiline stacked)
         { fullParent = []
@@ -1182,6 +1182,7 @@ isFill len =
             isFill l
 
 
+isShrink : Internal.Length -> Bool
 isShrink len =
     case len of
         Internal.Content ->
@@ -1200,6 +1201,7 @@ isShrink len =
             isShrink l
 
 
+isConstrained : Internal.Length -> Bool
 isConstrained len =
     case len of
         Internal.Content ->
@@ -1218,6 +1220,7 @@ isConstrained len =
             True
 
 
+isPixel : Internal.Length -> Bool
 isPixel len =
     case len of
         Internal.Content ->
@@ -1238,6 +1241,7 @@ isPixel len =
 
 {-| isStacked means that the label is above or below
 -}
+redistributeOver : Bool -> Bool -> Attribute msg -> Redistribution msg -> Redistribution msg
 redistributeOver isMultiline stacked attr els =
     case attr of
         Internal.Nearby _ _ ->
@@ -1559,6 +1563,7 @@ multiline attrs multi =
         }
 
 
+isHiddenLabel : Label msg -> Bool
 isHiddenLabel label =
     case label of
         HiddenLabel _ ->
@@ -1940,54 +1945,9 @@ onEnter msg =
     onKey enter msg
 
 
-{-| -}
-onSpace : msg -> Attribute msg
-onSpace msg =
-    onKey space msg
-
-
-{-| -}
-onUpArrow : msg -> Attribute msg
-onUpArrow msg =
-    onKey upArrow msg
-
-
-{-| -}
-onRightArrow : msg -> Attribute msg
-onRightArrow msg =
-    onKey rightArrow msg
-
-
-{-| -}
-onLeftArrow : msg -> Attribute msg
-onLeftArrow msg =
-    onKey leftArrow msg
-
-
-{-| -}
-onDownArrow : msg -> Attribute msg
-onDownArrow msg =
-    onKey downArrow msg
-
-
 enter : String
 enter =
     "Enter"
-
-
-tab : String
-tab =
-    "Tab"
-
-
-delete : String
-delete =
-    "Delete"
-
-
-backspace : String
-backspace =
-    "Backspace"
 
 
 upArrow : String
@@ -2074,28 +2034,6 @@ onKeyLookup lookup =
     Internal.Attr <| Html.Events.on "keyup" isKey
 
 
-{-| -}
-onFocusOut : msg -> Attribute msg
-onFocusOut msg =
-    Internal.Attr <| Html.Events.on "focusout" (Json.succeed msg)
-
-
-{-| -}
-onFocusIn : msg -> Attribute msg
-onFocusIn msg =
-    Internal.Attr <| Html.Events.on "focusin" (Json.succeed msg)
-
-
-selected : Bool -> Attribute msg
-selected =
-    Internal.Attr << Html.Attributes.selected
-
-
-name : String -> Attribute msg
-name =
-    Internal.Attr << Html.Attributes.name
-
-
 value : String -> Attribute msg
 value =
     Internal.Attr << Html.Attributes.value
@@ -2114,11 +2052,6 @@ disabled =
 spellcheck : Bool -> Attribute msg
 spellcheck =
     Internal.Attr << Html.Attributes.spellcheck
-
-
-readonly : Bool -> Attribute msg
-readonly =
-    Internal.Attr << Html.Attributes.readonly
 
 
 autofill : String -> Attribute msg

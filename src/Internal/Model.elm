@@ -33,7 +33,6 @@ module Internal.Model exposing
     , Variant(..)
     , XYZ
     , addNodeName
-    , addWhen
     , alignXName
     , alignYName
     , asColumn
@@ -47,7 +46,6 @@ module Internal.Model exposing
     , composeTransformation
     , contextClasses
     , createElement
-    , defaultOptions
     , div
     , element
     , embedKeyed
@@ -60,7 +58,6 @@ module Internal.Model exposing
     , formatBoxShadow
     , formatColor
     , formatColorClass
-    , formatDropShadow
     , formatTextShadow
     , gatherAttrRecursive
     , get
@@ -70,7 +67,6 @@ module Internal.Model exposing
     , getWidth
     , gridClass
     , htmlClass
-    , isContent
     , lengthClassName
     , map
     , mapAttr
@@ -84,7 +80,6 @@ module Internal.Model exposing
     , reduceRecursive
     , reduceStyles
     , reduceStylesRecursive
-    , removeNever
     , renderFontClassName
     , renderHeight
     , renderRoot
@@ -106,9 +101,6 @@ module Internal.Model exposing
 
 {-| -}
 
-import Html
-import Html.Attributes
-import Html.Keyed
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Style exposing (classes, dot)
 import Json.Encode as Encode
@@ -194,7 +186,6 @@ type Style
 type Transformation
     = Untransformed
     | Moved XYZ
-      --              translate, scale, rotate
     | FullTransform XYZ XYZ XYZ Angle
 
 
@@ -232,6 +223,7 @@ type Variant
     | VariantIndexed String Int
 
 
+renderVariant : Variant -> String
 renderVariant var =
     case var of
         VariantActive name ->
@@ -244,6 +236,7 @@ renderVariant var =
             "\"" ++ name ++ "\" " ++ String.fromInt index
 
 
+variantName : Variant -> String
 variantName var =
     case var of
         VariantActive name ->
@@ -256,6 +249,7 @@ variantName var =
             name ++ "-" ++ String.fromInt index
 
 
+renderVariants : Font -> Maybe String
 renderVariants typeface =
     case typeface of
         FontWith font ->
@@ -265,18 +259,20 @@ renderVariants typeface =
             Nothing
 
 
+isSmallCaps : Variant -> Bool
 isSmallCaps var =
     case var of
-        VariantActive name ->
-            name == "smcp"
+        VariantActive "smcp" ->
+            True
 
-        VariantOff name ->
+        VariantIndexed "smcp" 1 ->
+            True
+
+        _ ->
             False
 
-        VariantIndexed name index ->
-            name == "smcp" && index == 1
 
-
+hasSmallCaps : Font -> Bool
 hasSmallCaps typeface =
     case typeface of
         FontWith font ->
@@ -298,7 +294,7 @@ type alias Angle =
     Float
 
 
-type Attribute aligned msg
+type Attribute msg
     = NoAttribute
     | Attr (VirtualDom.Attribute msg)
     | Describe Description
@@ -371,15 +367,16 @@ type NodeName
     | Embedded String String
 
 
-type NearbyChildren msg
-    = NoNearbyChildren
-    | ChildrenBehind (List (Html.Html msg))
-    | ChildrenInFront (List (Html.Html msg))
-    | ChildrenBehindAndInFront (List (Html.Html msg)) (List (Html.Html msg))
-
-
+div : NodeName
 div =
     Generic
+
+
+type NearbyChildren msg
+    = NoNearbyChildren
+    | ChildrenBehind (List (VirtualDom.Node msg))
+    | ChildrenInFront (List (VirtualDom.Node msg))
+    | ChildrenBehindAndInFront (List (VirtualDom.Node msg)) (List (VirtualDom.Node msg))
 
 
 type alias Gathered msg =
@@ -391,9 +388,14 @@ type alias Gathered msg =
     }
 
 
-htmlClass : String -> Attribute aligned msg
-htmlClass cls =
-    Attr <| Html.Attributes.class cls
+foobar : String -> VirtualDom.Attribute msg
+foobar className =
+    VirtualDom.property "className" (Encode.string className)
+
+
+htmlClass : String -> Attribute msg
+htmlClass =
+    Attr << foobar
 
 
 {-| -}
@@ -402,6 +404,7 @@ unstyled =
     Unstyled << always
 
 
+finalizeNode : Flag.Field -> NodeName -> List (VirtualDom.Attribute msg) -> Children (VirtualDom.Node msg) -> EmbedStyle -> LayoutContext -> VirtualDom.Node msg
 finalizeNode has node attributes children embedMode parentContext =
     let
         createNode nodeName attrs =
@@ -421,16 +424,7 @@ finalizeNode has node attributes children embedMode parentContext =
                         )
 
                 Unkeyed unkeyed ->
-                    (case nodeName of
-                        "div" ->
-                            Html.div
-
-                        "p" ->
-                            Html.p
-
-                        _ ->
-                            VirtualDom.node nodeName
-                    )
+                    VirtualDom.node nodeName
                         attrs
                         (case embedMode of
                             NoStyleSheet ->
@@ -455,7 +449,7 @@ finalizeNode has node attributes children embedMode parentContext =
                     VirtualDom.node nodeName
                         attributes
                         [ createNode internal
-                            [ Html.Attributes.class
+                            [ foobar
                                 (classes.any ++ " " ++ classes.single)
                             ]
                         ]
@@ -466,8 +460,8 @@ finalizeNode has node attributes children embedMode parentContext =
                 html
 
             else if Flag.present Flag.alignRight has then
-                Html.u
-                    [ Html.Attributes.class
+                VirtualDom.node "u"
+                    [ foobar
                         (String.join " "
                             [ classes.any
                             , classes.single
@@ -480,8 +474,8 @@ finalizeNode has node attributes children embedMode parentContext =
                     [ html ]
 
             else if Flag.present Flag.centerX has then
-                Html.s
-                    [ Html.Attributes.class
+                VirtualDom.node "s"
+                    [ foobar
                         (String.join " "
                             [ classes.any
                             , classes.single
@@ -501,8 +495,8 @@ finalizeNode has node attributes children embedMode parentContext =
                 html
 
             else if Flag.present Flag.centerY has then
-                Html.s
-                    [ Html.Attributes.class
+                VirtualDom.node "s"
+                    [ foobar
                         (String.join " "
                             [ classes.any
                             , classes.single
@@ -514,8 +508,8 @@ finalizeNode has node attributes children embedMode parentContext =
                     [ html ]
 
             else if Flag.present Flag.alignBottom has then
-                Html.u
-                    [ Html.Attributes.class
+                VirtualDom.node "u"
+                    [ foobar
                         (String.join " "
                             [ classes.any
                             , classes.single
@@ -533,14 +527,13 @@ finalizeNode has node attributes children embedMode parentContext =
             html
 
 
+embedWith : Bool -> OptionRecord -> List Style -> List (VirtualDom.Node msg) -> List (VirtualDom.Node msg)
 embedWith static opts styles children =
     let
         dynamicStyleSheet =
             styles
                 |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
                 |> Tuple.second
-                -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
-                -- |> sortedReduce
                 |> toStyleSheet opts
     in
     if static then
@@ -553,28 +546,20 @@ embedWith static opts styles children =
             :: children
 
 
+embedKeyed : Bool -> OptionRecord -> List Style -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
 embedKeyed static opts styles children =
     let
         dynamicStyleSheet =
             styles
                 |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
                 |> Tuple.second
-                -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
-                -- |> sortedReduce
                 |> toStyleSheet opts
     in
     if static then
-        ( "static-stylesheet", staticRoot opts )
-            :: ( "dynamic-stylesheet"
-               , dynamicStyleSheet
-               )
-            :: children
+        ( "static-stylesheet", staticRoot opts ) :: ( "dynamic-stylesheet", dynamicStyleSheet ) :: children
 
     else
-        ( "dynamic-stylesheet"
-        , dynamicStyleSheet
-        )
-            :: children
+        ( "dynamic-stylesheet", dynamicStyleSheet ) :: children
 
 
 reduceStylesRecursive : Set String -> List Style -> List Style -> List Style
@@ -608,30 +593,6 @@ reduceStyles style (( cache, existing ) as nevermind) =
         ( Set.insert styleName cache
         , style :: existing
         )
-
-
-sortedReduce styles =
-    styles
-        -- |> List.map (\x -> ( getStyleName x, x ))
-        |> List.sortBy getStyleName
-        |> reduceRecursiveCalcName []
-
-
-reduceRecursiveCalcName : List Style -> List Style -> List Style
-reduceRecursiveCalcName found styles =
-    case styles of
-        [] ->
-            found
-
-        headOfList :: [] ->
-            headOfList :: found
-
-        headOfList :: other :: remaining ->
-            if headOfList /= other then
-                reduceRecursiveCalcName (headOfList :: found) (other :: remaining)
-
-            else
-                reduceRecursiveCalcName found (other :: remaining)
 
 
 reduceRecursive : List Style -> List ( String, Style ) -> List Style
@@ -690,6 +651,7 @@ alignYName align =
             classes.alignedVertically ++ " " ++ classes.alignCenterY
 
 
+transformClass : Transformation -> Maybe String
 transformClass transform =
     case transform of
         Untransformed ->
@@ -728,6 +690,7 @@ transformClass transform =
                     ++ floatClass angle
 
 
+transformValue : Transformation -> Maybe String
 transformValue transform =
     case transform of
         Untransformed ->
@@ -774,9 +737,10 @@ transformValue transform =
                         ++ String.fromFloat angle
                         ++ "rad)"
             in
-            Just <| translate ++ " " ++ scale ++ " " ++ rotate
+            Just (translate ++ " " ++ scale ++ " " ++ rotate)
 
 
+composeTransformation : Transformation -> TransformComponent -> Transformation
 composeTransformation transform component =
     case transform of
         Untransformed ->
@@ -840,6 +804,7 @@ composeTransformation transform component =
                     FullTransform moved newScale origin angle
 
 
+skippable : Flag -> Style -> Bool
 skippable flag style =
     if flag == Flag.borderWidth then
         case style of
@@ -880,10 +845,6 @@ skippable flag style =
             PaddingStyle name t r b l ->
                 t == b && t == r && t == l && t >= 0 && t <= 24
 
-            -- SpacingStyle _ _ _ ->
-            --     True
-            -- FontFamily _ _ ->
-            --     True
             _ ->
                 False
 
@@ -896,14 +857,14 @@ gatherAttrRecursive :
     -> List Style
     -> List (VirtualDom.Attribute msg)
     -> NearbyChildren msg
-    -> List (Attribute aligned msg)
+    -> List (Attribute msg)
     -> Gathered msg
 gatherAttrRecursive classes node has transform styles attrs children elementAttrs =
     case elementAttrs of
         [] ->
             case transformClass transform of
                 Nothing ->
-                    { attributes = Html.Attributes.class classes :: attrs
+                    { attributes = foobar classes :: attrs
                     , styles = styles
                     , node = node
                     , children = children
@@ -911,7 +872,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     }
 
                 Just class ->
-                    { attributes = Html.Attributes.class (classes ++ " " ++ class) :: attrs
+                    { attributes = foobar (classes ++ " " ++ class) :: attrs
                     , styles = Transform transform :: styles
                     , node = node
                     , children = children
@@ -1173,17 +1134,11 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     let
                         newStyles =
                             case elem of
-                                Empty ->
-                                    styles
-
-                                Text str ->
-                                    styles
-
-                                Unstyled html ->
-                                    styles
-
                                 Styled styled ->
                                     styles ++ styled.styles
+
+                                _ ->
+                                    styles
                     in
                     gatherAttrRecursive
                         classes
@@ -1249,6 +1204,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             remaining
 
 
+addNearbyElement : Location -> Element msg -> NearbyChildren msg -> NearbyChildren msg
 addNearbyElement location elem existing =
     let
         nearby =
@@ -1288,9 +1244,10 @@ addNearbyElement location elem existing =
                     ChildrenBehindAndInFront existingBehind (nearby :: existingInFront)
 
 
+nearbyElement : Location -> Element msg -> VirtualDom.Node msg
 nearbyElement location elem =
-    Html.div
-        [ Html.Attributes.class <|
+    VirtualDom.node "div"
+        [ foobar <|
             case location of
                 Above ->
                     String.join " "
@@ -1349,6 +1306,7 @@ nearbyElement location elem =
         ]
 
 
+renderWidth : Length -> ( Flag.Field, String, List Style )
 renderWidth w =
     case w of
         Px px ->
@@ -1424,6 +1382,7 @@ renderWidth w =
             )
 
 
+renderHeight : Length -> ( Flag.Field, String, List Style )
 renderHeight h =
     case h of
         Px px ->
@@ -1506,30 +1465,37 @@ renderHeight h =
             )
 
 
+rowClass : String
 rowClass =
     classes.any ++ " " ++ classes.row
 
 
+columnClass : String
 columnClass =
     classes.any ++ " " ++ classes.column
 
 
+singleClass : String
 singleClass =
     classes.any ++ " " ++ classes.single
 
 
+gridClass : String
 gridClass =
     classes.any ++ " " ++ classes.grid
 
 
+paragraphClass : String
 paragraphClass =
     classes.any ++ " " ++ classes.paragraph
 
 
+pageClass : String
 pageClass =
     classes.any ++ " " ++ classes.page
 
 
+contextClasses : LayoutContext -> String
 contextClasses context =
     case context of
         AsRow ->
@@ -1551,16 +1517,12 @@ contextClasses context =
             pageClass
 
 
-element : LayoutContext -> NodeName -> List (Attribute aligned msg) -> Children (Element msg) -> Element msg
+element : LayoutContext -> NodeName -> List (Attribute msg) -> Children (Element msg) -> Element msg
 element context node attributes children =
     attributes
         |> List.reverse
-        |> gatherAttrRecursive (contextClasses context) node Flag.none untransformed [] [] NoNearbyChildren
+        |> gatherAttrRecursive (contextClasses context) node Flag.none Untransformed [] [] NoNearbyChildren
         |> createElement context children
-
-
-untransformed =
-    Untransformed
 
 
 createElement : LayoutContext -> Children (Element msg) -> Gathered msg -> Element msg
@@ -1622,13 +1584,11 @@ createElement context children rendered =
                     --     , existingStyles
                     --     )
                     -- else
-                    ( (if context == asEl then
-                        textElementFill str
+                    ( if context == asEl then
+                        textElementFill str :: htmls
 
-                       else
-                        textElement str
-                      )
-                        :: htmls
+                      else
+                        textElement str :: htmls
                     , existingStyles
                     )
 
@@ -1771,6 +1731,7 @@ createElement context children rendered =
                                 }
 
 
+addChildren : List (VirtualDom.Node msg) -> NearbyChildren msg -> List (VirtualDom.Node msg)
 addChildren existing nearbyChildren =
     case nearbyChildren of
         NoNearbyChildren ->
@@ -1786,6 +1747,7 @@ addChildren existing nearbyChildren =
             behind ++ existing ++ inFront
 
 
+addKeyedChildren : String -> List ( String, VirtualDom.Node msg ) -> NearbyChildren msg -> List ( String, VirtualDom.Node msg )
 addKeyedChildren key existing nearbyChildren =
     case nearbyChildren of
         NoNearbyChildren ->
@@ -1801,17 +1763,6 @@ addKeyedChildren key existing nearbyChildren =
             List.map (\x -> ( key, x )) behind
                 ++ existing
                 ++ List.map (\x -> ( key, x )) inFront
-
-
-unit =
-    0
-
-
-defaultOptions =
-    { hover = AllowHover
-    , focus = focusDefaultStyle
-    , mode = Layout
-    }
 
 
 staticRoot : OptionRecord -> VirtualDom.Node msg
@@ -1830,20 +1781,12 @@ staticRoot opts =
             VirtualDom.node "elm-ui-static-rules" [ VirtualDom.property "rules" (Encode.string Internal.Style.rules) ] []
 
 
-addWhen ifThis x to =
-    if ifThis then
-        x :: to
-
-    else
-        to
-
-
 {-| TODO:
 
 This doesn't reduce equivalent attributes completely.
 
 -}
-filter : List (Attribute aligned msg) -> List (Attribute aligned msg)
+filter : List (Attribute msg) -> List (Attribute msg)
 filter attrs =
     Tuple.first <|
         List.foldr
@@ -1910,22 +1853,7 @@ filter attrs =
             attrs
 
 
-isContent len =
-    case len of
-        Content ->
-            True
-
-        Max _ l ->
-            isContent l
-
-        Min _ l ->
-            isContent l
-
-        _ ->
-            False
-
-
-get : List (Attribute aligned msg) -> (Attribute aligned msg -> Bool) -> List (Attribute aligned msg)
+get : List (Attribute msg) -> (Attribute msg -> Bool) -> List (Attribute msg)
 get attrs isAttr =
     attrs
         |> filter
@@ -1948,7 +1876,7 @@ type Padding
     = Padding String Int Int Int Int
 
 
-extractSpacingAndPadding : List (Attribute aligned msg) -> ( Maybe Padding, Maybe Spacing )
+extractSpacingAndPadding : List (Attribute msg) -> ( Maybe Padding, Maybe Spacing )
 extractSpacingAndPadding attrs =
     List.foldr
         (\attr ( pad, spacing ) ->
@@ -1980,7 +1908,7 @@ extractSpacingAndPadding attrs =
         attrs
 
 
-getSpacing : List (Attribute aligned msg) -> ( Int, Int ) -> ( Int, Int )
+getSpacing : List (Attribute msg) -> ( Int, Int ) -> ( Int, Int )
 getSpacing attrs default =
     attrs
         |> List.foldr
@@ -2001,7 +1929,7 @@ getSpacing attrs default =
         |> Maybe.withDefault default
 
 
-getWidth : List (Attribute aligned msg) -> Maybe Length
+getWidth : List (Attribute msg) -> Maybe Length
 getWidth attrs =
     attrs
         |> List.foldr
@@ -2021,7 +1949,7 @@ getWidth attrs =
             Nothing
 
 
-getHeight : List (Attribute aligned msg) -> Maybe Length
+getHeight : List (Attribute msg) -> Maybe Length
 getHeight attrs =
     attrs
         |> List.foldr
@@ -2054,11 +1982,11 @@ textElementClasses =
 
 textElement : String -> VirtualDom.Node msg
 textElement str =
-    Html.div
-        [ Html.Attributes.class
+    VirtualDom.node "div"
+        [ foobar
             textElementClasses
         ]
-        [ Html.text str ]
+        [ VirtualDom.text str ]
 
 
 textElementFillClasses : String
@@ -2074,11 +2002,11 @@ textElementFillClasses =
 
 textElementFill : String -> VirtualDom.Node msg
 textElementFill str =
-    Html.div
-        [ Html.Attributes.class
+    VirtualDom.node "div"
+        [ foobar
             textElementFillClasses
         ]
-        [ Html.text str ]
+        [ VirtualDom.text str ]
 
 
 type Children x
@@ -2086,6 +2014,7 @@ type Children x
     | Keyed (List ( String, x ))
 
 
+toHtml : (List Style -> EmbedStyle) -> Element msg -> VirtualDom.Node msg
 toHtml mode el =
     case el of
         Unstyled html ->
@@ -2102,7 +2031,7 @@ toHtml mode el =
 
 
 {-| -}
-renderRoot : List Option -> List (Attribute aligned msg) -> Element msg -> VirtualDom.Node msg
+renderRoot : List Option -> List (Attribute msg) -> Element msg -> VirtualDom.Node msg
 renderRoot optionList attributes child =
     let
         options =
@@ -2116,7 +2045,7 @@ renderRoot optionList attributes child =
                 _ ->
                     StaticRootAndDynamic options
     in
-    element asEl div attributes (Unkeyed [ child ])
+    element asEl Generic attributes (Unkeyed [ child ])
         |> toHtml embedStyle
 
 
@@ -2154,13 +2083,14 @@ type alias FocusStyle =
 
 type alias Shadow =
     { color : Color
-    , offset : ( Int, Int )
-    , blur : Int
-    , size : Int
+    , offset : ( Float, Float )
+    , blur : Float
+    , size : Float
+    , inset : Bool
     }
 
 
-rootStyle : List (Attribute aligned msg)
+rootStyle : List (Attribute msg)
 rootStyle =
     let
         families =
@@ -2212,32 +2142,13 @@ renderFontClassName font current =
            )
 
 
-renderFocusStyle :
-    FocusStyle
-    -> List Style
+renderFocusStyle : FocusStyle -> List Style
 renderFocusStyle focus =
     [ Style (Internal.Style.dot classes.focusedWithin ++ ":focus-within")
         (List.filterMap identity
             [ Maybe.map (\color -> Property "border-color" (formatColor color)) focus.borderColor
             , Maybe.map (\color -> Property "background-color" (formatColor color)) focus.backgroundColor
-            , Maybe.map
-                (\shadow ->
-                    Property "box-shadow"
-                        (formatBoxShadow
-                            { color = shadow.color
-                            , offset =
-                                shadow.offset
-                                    |> Tuple.mapFirst toFloat
-                                    |> Tuple.mapSecond toFloat
-                            , inset = False
-                            , blur =
-                                toFloat shadow.blur
-                            , size =
-                                toFloat shadow.size
-                            }
-                        )
-                )
-                focus.shadow
+            , Maybe.map (Property "box-shadow" << formatBoxShadow) focus.shadow
             , Just <| Property "outline" "none"
             ]
         )
@@ -2245,22 +2156,7 @@ renderFocusStyle focus =
         (List.filterMap identity
             [ Maybe.map (\color -> Property "border-color" (formatColor color)) focus.borderColor
             , Maybe.map (\color -> Property "background-color" (formatColor color)) focus.backgroundColor
-            , Maybe.map
-                (\shadow ->
-                    Property "box-shadow"
-                        (formatBoxShadow
-                            { color = shadow.color
-                            , offset =
-                                shadow.offset
-                                    |> Tuple.mapFirst toFloat
-                                    |> Tuple.mapSecond toFloat
-                            , inset = False
-                            , blur = toFloat shadow.blur
-                            , size = toFloat shadow.size
-                            }
-                        )
-                )
-                focus.shadow
+            , Maybe.map (Property "box-shadow" << formatBoxShadow) focus.shadow
             , Just <| Property "outline" "none"
             ]
         )
@@ -2278,6 +2174,7 @@ focusDefaultStyle =
             , offset = ( 0, 0 )
             , blur = 0
             , size = 3
+            , inset = False
             }
     }
 
@@ -2373,6 +2270,7 @@ toStyleSheet options styleSheet =
                 []
 
 
+renderTopLevelValues : List ( String, List Font ) -> String
 renderTopLevelValues rules =
     let
         withImport font =
@@ -2380,24 +2278,11 @@ renderTopLevelValues rules =
                 ImportFont _ url ->
                     Just ("@import url('" ++ url ++ "');")
 
-                -- FontWith with ->
-                --     case with.url of
-                --         Just x ->
-                --             Just ("@import url('" ++ x ++ "');")
-                --         Nothing ->
-                --             Nothing
                 _ ->
                     Nothing
 
         allNames =
             List.map Tuple.first rules
-
-        fontImports ( name, typefaces ) =
-            let
-                imports =
-                    String.join "\n" (List.filterMap withImport typefaces)
-            in
-            imports
 
         fontAdjustments ( name, typefaces ) =
             case typefaceAdjustment typefaces of
@@ -2409,10 +2294,11 @@ renderTopLevelValues rules =
                     String.join ""
                         (List.map (renderFontAdjustmentRule name adjustment) allNames)
     in
-    String.join "\n" (List.map fontImports rules)
+    String.join "\n" (List.map (String.join "\n" << List.filterMap withImport << Tuple.second) rules)
         ++ String.join "\n" (List.map fontAdjustments rules)
 
 
+renderNullAdjustmentRule : String -> String -> String
 renderNullAdjustmentRule fontToAdjust otherFontName =
     let
         name =
@@ -2456,6 +2342,7 @@ renderNullAdjustmentRule fontToAdjust otherFontName =
         ]
 
 
+fontRule : String -> String -> ( List ( String, String ), List ( String, String ) ) -> List String
 fontRule name modifier ( parentAdj, textAdjustment ) =
     [ bracket
         ("."
@@ -2487,6 +2374,11 @@ fontRule name modifier ( parentAdj, textAdjustment ) =
     ]
 
 
+renderFontAdjustmentRule :
+    String
+    -> ( ( List ( String, String ), List ( String, String ) ), ( List ( String, String ), List ( String, String ) ) )
+    -> String
+    -> String
 renderFontAdjustmentRule fontToAdjust ( full, capital ) otherFontName =
     let
         name =
@@ -2500,6 +2392,7 @@ renderFontAdjustmentRule fontToAdjust ( full, capital ) otherFontName =
         (fontRule name classes.sizeByCapital capital ++ fontRule name classes.fullSize full)
 
 
+bracket : String -> List ( String, String ) -> String
 bracket selector rules =
     let
         renderPair ( name, val ) =
@@ -2508,6 +2401,7 @@ bracket selector rules =
     selector ++ " {" ++ String.join "" (List.map renderPair rules) ++ "}"
 
 
+fontAdjustmentRules : Adjust -> ( List ( String, String ), List ( String, String ) )
 fontAdjustmentRules converted =
     ( [ ( "display", "block" )
       ]
@@ -2519,6 +2413,9 @@ fontAdjustmentRules converted =
     )
 
 
+typefaceAdjustment :
+    List Font
+    -> Maybe ( ( List ( String, String ), List ( String, String ) ), ( List ( String, String ), List ( String, String ) ) )
 typefaceAdjustment typefaces =
     List.foldl
         (\face found ->
@@ -2548,6 +2445,7 @@ typefaceAdjustment typefaces =
         typefaces
 
 
+fontName : Font -> String
 fontName font =
     case font of
         Serif ->
@@ -2569,6 +2467,7 @@ fontName font =
             "\"" ++ name ++ "\""
 
 
+topLevelValue : Style -> Maybe ( String, List Font )
 topLevelValue rule =
     case rule of
         FontFamily name typefaces ->
@@ -2578,6 +2477,7 @@ topLevelValue rule =
             Nothing
 
 
+renderProps : Bool -> Property -> String -> String
 renderProps force (Property key val) existing =
     if force then
         existing ++ "\n  " ++ key ++ ": " ++ val ++ " !important;"
@@ -2586,6 +2486,7 @@ renderProps force (Property key val) existing =
         existing ++ "\n  " ++ key ++ ": " ++ val ++ ";"
 
 
+encodeStyles : OptionRecord -> List Style -> Encode.Value
 encodeStyles options stylesheet =
     stylesheet
         |> List.map
@@ -2793,9 +2694,6 @@ renderStyleRule options rule maybePseudo =
 
                 any =
                     "." ++ Internal.Style.classes.any
-
-                single =
-                    "." ++ Internal.Style.classes.single
             in
             List.concat
                 [ renderStyle options maybePseudo (class ++ row ++ " > " ++ any ++ " + " ++ any) [ Property "margin-left" xPx ]
@@ -2922,9 +2820,6 @@ renderStyleRule options rule maybePseudo =
 
                 ySpacing =
                     toGridLength (Tuple.second template.spacing)
-
-                xSpacing =
-                    toGridLength (Tuple.first template.spacing)
 
                 toGridLength x =
                     toGridLengthHelper Nothing Nothing x
@@ -3113,15 +3008,7 @@ lengthClassName x =
             "max" ++ String.fromInt max ++ lengthClassName len
 
 
-formatDropShadow shadow =
-    String.join " "
-        [ String.fromFloat (Tuple.first shadow.offset) ++ "px"
-        , String.fromFloat (Tuple.second shadow.offset) ++ "px"
-        , String.fromFloat shadow.blur ++ "px"
-        , formatColor shadow.color
-        ]
-
-
+formatTextShadow : Shadow -> String
 formatTextShadow shadow =
     String.join " "
         [ String.fromFloat (Tuple.first shadow.offset) ++ "px"
@@ -3131,6 +3018,7 @@ formatTextShadow shadow =
         ]
 
 
+textShadowClass : Shadow -> String
 textShadowClass shadow =
     String.concat
         [ "txt"
@@ -3141,24 +3029,28 @@ textShadowClass shadow =
         ]
 
 
+formatBoxShadow : Shadow -> String
 formatBoxShadow shadow =
-    String.join " " <|
-        List.filterMap identity
-            [ if shadow.inset then
-                Just "inset"
+    let
+        val =
+            String.join " "
+                [ String.fromFloat (Tuple.first shadow.offset) ++ "px"
+                , String.fromFloat (Tuple.second shadow.offset) ++ "px"
+                , String.fromFloat shadow.blur ++ "px"
+                , String.fromFloat shadow.size ++ "px"
+                , formatColor shadow.color
+                ]
+    in
+    if shadow.inset then
+        val ++ " inset"
 
-              else
-                Nothing
-            , Just <| String.fromFloat (Tuple.first shadow.offset) ++ "px"
-            , Just <| String.fromFloat (Tuple.second shadow.offset) ++ "px"
-            , Just <| String.fromFloat shadow.blur ++ "px"
-            , Just <| String.fromFloat shadow.size ++ "px"
-            , Just <| formatColor shadow.color
-            ]
+    else
+        val
 
 
+boxShadowClass : Shadow -> String
 boxShadowClass shadow =
-    String.concat <|
+    String.concat
         [ if shadow.inset then
             "box-inset"
 
@@ -3197,10 +3089,12 @@ formatColorClass (Rgba red green blue alpha) =
         ++ floatClass alpha
 
 
+spacingName : Int -> Int -> String
 spacingName x y =
     "spacing-" ++ String.fromInt x ++ "-" ++ String.fromInt y
 
 
+paddingName : Int -> Int -> Int -> Int -> String
 paddingName top right bottom left =
     "pad-"
         ++ String.fromInt top
@@ -3351,7 +3245,7 @@ map fn el =
             Empty
 
 
-mapAttr : (msg -> msg1) -> Attribute aligned msg -> Attribute aligned msg1
+mapAttr : (msg -> msg1) -> Attribute msg -> Attribute msg1
 mapAttr fn attr =
     case attr of
         NoAttribute ->
@@ -3388,7 +3282,7 @@ mapAttr fn attr =
             TransformComponent fl trans
 
 
-mapAttrFromStyle : (msg -> msg1) -> Attribute Never msg -> Attribute () msg1
+mapAttrFromStyle : (msg -> msg1) -> Attribute msg -> Attribute msg1
 mapAttrFromStyle fn attr =
     case attr of
         NoAttribute ->
@@ -3426,15 +3320,16 @@ mapAttrFromStyle fn attr =
             TransformComponent fl trans
 
 
-unwrapDecorations : List (Attribute Never Never) -> List Style
+unwrapDecorations : List (Attribute Never) -> List Style
 unwrapDecorations attrs =
     case List.foldl unwrapDecsHelper ( [], Untransformed ) attrs of
         ( styles, transform ) ->
             Transform transform :: styles
 
 
+unwrapDecsHelper : Attribute msg -> ( List Style, Transformation ) -> ( List Style, Transformation )
 unwrapDecsHelper attr ( styles, trans ) =
-    case removeNever attr of
+    case attr of
         StyleClass _ style ->
             ( style :: styles, trans )
 
@@ -3443,11 +3338,6 @@ unwrapDecsHelper attr ( styles, trans ) =
 
         _ ->
             ( styles, trans )
-
-
-removeNever : Attribute Never Never -> Attribute () msg
-removeNever style =
-    mapAttrFromStyle Basics.never style
 
 
 tag : String -> Style -> Style
@@ -3469,7 +3359,7 @@ tag label style =
             x
 
 
-onlyStyles : Attribute aligned msg -> Maybe Style
+onlyStyles : Attribute msg -> Maybe Style
 onlyStyles attr =
     case attr of
         StyleClass _ style ->
@@ -3483,27 +3373,15 @@ onlyStyles attr =
 {- Font Adjustments -}
 
 
+type alias Bar =
+    { full : Adjust
+    , capital : Adjust
+    }
+
+
+convertAdjustment : Adjustment -> Bar
 convertAdjustment adjustment =
     let
-        lineHeight =
-            1.5
-
-        base =
-            lineHeight
-
-        normalDescender =
-            (lineHeight - 1)
-                / 2
-
-        oldMiddle =
-            lineHeight / 2
-
-        newCapitalMiddle =
-            ((ascender - newBaseline) / 2) + newBaseline
-
-        newFullMiddle =
-            ((ascender - descender) / 2) + descender
-
         lines =
             [ adjustment.capital
             , adjustment.baseline
@@ -3534,19 +3412,22 @@ convertAdjustment adjustment =
 
         fullVertical =
             1 - ascender
-
-        -- (oldMiddle - newFullMiddle) * 2
     in
-    { full =
-        adjust fullSize (ascender - descender) fullVertical
-    , capital =
-        adjust capitalSize (ascender - newBaseline) capitalVertical
+    { full = adjust fullSize (ascender - descender) fullVertical
+    , capital = adjust capitalSize (ascender - newBaseline) capitalVertical
     }
 
 
+type alias Adjust =
+    { vertical : Float
+    , height : Float
+    , size : Float
+    }
+
+
+adjust : Float -> Float -> Float -> Adjust
 adjust size height vertical =
     { vertical = vertical
-    , height =
-        height / size
+    , height = height / size
     , size = size
     }

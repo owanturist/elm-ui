@@ -22,7 +22,7 @@ benchmark to be sure!
 
 -}
 
-import Internal.Model exposing (..)
+import Internal.Model exposing (Element(..), HoverSetting(..), LayoutContext, RenderMode(..))
 import VirtualDom
 
 
@@ -56,6 +56,7 @@ lazy5 fn a b c d e =
     Unstyled <| VirtualDom.lazy7 apply5 fn a b c d e
 
 
+apply1 : (a -> Element msg) -> a -> LayoutContext -> VirtualDom.Node msg
 apply1 fn a =
     embed (fn a)
 
@@ -78,10 +79,10 @@ apply5 fn a b c d e =
 
 {-| -}
 embed : Element msg -> LayoutContext -> VirtualDom.Node msg
-embed x =
-    case x of
-        Unstyled html ->
-            html
+embed el context =
+    case el of
+        Unstyled toHtml ->
+            toHtml context
 
         Styled styled ->
             styled.html
@@ -96,22 +97,10 @@ embed x =
                     }
                     styled.styles
                 )
+                context
 
-        -- -- (Just
-        -- --     (toStyleSheetString
-        --         { hover = AllowHover
-        --         , focus =
-        --             { borderColor = Nothing
-        --             , shadow = Nothing
-        --             , backgroundColor = Nothing
-        --             }
-        --         , mode = Layout
-        --         }
-        -- --         styled.styles
-        -- --     )
-        -- -- )
         Text text ->
-            always (VirtualDom.text text)
+            VirtualDom.text text
 
         Empty ->
-            always (VirtualDom.text "")
+            VirtualDom.text ""

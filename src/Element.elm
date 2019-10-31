@@ -17,7 +17,7 @@ module Element exposing
     , image
     , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
     , above, below, onRight, onLeft, inFront, behindContent
-    , Attr, Decoration, mouseOver, mouseDown, focused
+    , Decoration, mouseOver, mouseDown, focused
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , modular
     , map, mapAttribute
@@ -214,7 +214,7 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 import Html exposing (Html)
 import Html.Attributes
-import Internal.Flag as Flag exposing (Flag)
+import Internal.Flag as Flag
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
 
@@ -329,19 +329,13 @@ type alias Element msg =
 {-| An attribute that can be attached to an `Element`
 -}
 type alias Attribute msg =
-    Internal.Attribute () msg
-
-
-{-| This is a special attribute that counts as both a `Attribute msg` and a `Decoration`.
--}
-type alias Attr decorative msg =
-    Internal.Attribute decorative msg
+    Internal.Attribute msg
 
 
 {-| Only decorations
 -}
 type alias Decoration =
-    Internal.Attribute Never Never
+    Internal.Attribute Never
 
 
 {-| -}
@@ -480,39 +474,37 @@ noStaticStyleSheet =
 
 
 {-| -}
-defaultFocus :
-    { borderColor : Maybe Color
-    , backgroundColor : Maybe Color
-    , shadow :
-        Maybe
-            { color : Color
-            , offset : ( Int, Int )
-            , blur : Int
-            , size : Int
-            }
-    }
-defaultFocus =
-    Internal.focusDefaultStyle
-
-
-{-| -}
 type alias FocusStyle =
     { borderColor : Maybe Color
     , backgroundColor : Maybe Color
     , shadow :
         Maybe
             { color : Color
-            , offset : ( Int, Int )
-            , blur : Int
-            , size : Int
+            , offset : ( Float, Float )
+            , blur : Float
+            , size : Float
             }
     }
 
 
 {-| -}
 focusStyle : FocusStyle -> Option
-focusStyle =
+focusStyle { borderColor, backgroundColor, shadow } =
     Internal.FocusStyleOption
+        { borderColor = borderColor
+        , backgroundColor = backgroundColor
+        , shadow =
+            Maybe.map
+                (\{ color, offset, blur, size } ->
+                    { color = color
+                    , offset = offset
+                    , blur = blur
+                    , size = size
+                    , inset = False
+                    }
+                )
+                shadow
+        }
 
 
 {-| Disable all `mouseOver` styles.
@@ -696,39 +688,38 @@ wrappedRow attrs children =
                             [ Internal.element
                                 Internal.asRow
                                 Internal.div
-                                (Internal.htmlClass
+                                [ Internal.htmlClass
                                     (classes.contentLeft
                                         ++ " "
                                         ++ classes.contentCenterY
                                         ++ " "
                                         ++ classes.wrapped
                                     )
-                                    :: Internal.Attr
-                                        (Html.Attributes.style "margin"
-                                            (String.fromFloat halfY
-                                                ++ "px"
-                                                ++ " "
-                                                ++ String.fromFloat halfX
-                                                ++ "px"
-                                            )
+                                , Internal.Attr
+                                    (Html.Attributes.style "margin"
+                                        (String.fromFloat halfY
+                                            ++ "px"
+                                            ++ " "
+                                            ++ String.fromFloat halfX
+                                            ++ "px"
                                         )
-                                    :: Internal.Attr
-                                        (Html.Attributes.style "width"
-                                            ("calc(100% + "
-                                                ++ String.fromInt x
-                                                ++ "px)"
-                                            )
+                                    )
+                                , Internal.Attr
+                                    (Html.Attributes.style "width"
+                                        ("calc(100% + "
+                                            ++ String.fromInt x
+                                            ++ "px)"
                                         )
-                                    :: Internal.Attr
-                                        (Html.Attributes.style "height"
-                                            ("calc(100% + "
-                                                ++ String.fromInt y
-                                                ++ "px)"
-                                            )
+                                    )
+                                , Internal.Attr
+                                    (Html.Attributes.style "height"
+                                        ("calc(100% + "
+                                            ++ String.fromInt y
+                                            ++ "px)"
                                         )
-                                    :: Internal.StyleClass Flag.spacing (Internal.SpacingStyle spaceName x y)
-                                    :: []
-                                )
+                                    )
+                                , Internal.StyleClass Flag.spacing (Internal.SpacingStyle spaceName x y)
+                                ]
                                 (Internal.Unkeyed children)
                             ]
                         )
@@ -1302,38 +1293,38 @@ height =
 
 
 {-| -}
-scale : Float -> Attr decorative msg
+scale : Float -> Attribute msg
 scale n =
     Internal.TransformComponent Flag.scale (Internal.Scale ( n, n, 1 ))
 
 
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
-rotate : Float -> Attr decorative msg
+rotate : Float -> Attribute msg
 rotate angle =
     Internal.TransformComponent Flag.rotate (Internal.Rotate ( 0, 0, 1 ) angle)
 
 
 {-| -}
-moveUp : Float -> Attr decorative msg
+moveUp : Float -> Attribute msg
 moveUp y =
     Internal.TransformComponent Flag.moveY (Internal.MoveY (negate y))
 
 
 {-| -}
-moveDown : Float -> Attr decorative msg
+moveDown : Float -> Attribute msg
 moveDown y =
     Internal.TransformComponent Flag.moveY (Internal.MoveY y)
 
 
 {-| -}
-moveRight : Float -> Attr decorative msg
+moveRight : Float -> Attribute msg
 moveRight x =
     Internal.TransformComponent Flag.moveX (Internal.MoveX x)
 
 
 {-| -}
-moveLeft : Float -> Attr decorative msg
+moveLeft : Float -> Attribute msg
 moveLeft x =
     Internal.TransformComponent Flag.moveX (Internal.MoveX (negate x))
 
@@ -1452,7 +1443,7 @@ spacingXY x y =
 
 {-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
 -}
-transparent : Bool -> Attr decorative msg
+transparent : Bool -> Attribute msg
 transparent on =
     if on then
         Internal.StyleClass Flag.transparency (Internal.Transparency "transparent" 1.0)
@@ -1466,7 +1457,7 @@ transparent on =
 Semantically equivalent to html opacity.
 
 -}
-alpha : Float -> Attr decorative msg
+alpha : Float -> Attribute msg
 alpha o =
     let
         transparency =

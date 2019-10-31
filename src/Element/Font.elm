@@ -65,7 +65,7 @@ module Element.Font exposing
 
 -}
 
-import Element exposing (Attr, Attribute, Color)
+import Element exposing (Attribute, Color)
 import Internal.Flag as Flag
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
@@ -77,7 +77,7 @@ type alias Font =
 
 
 {-| -}
-color : Color -> Attr decorative msg
+color : Color -> Attribute msg
 color fontColor =
     Internal.StyleClass
         Flag.fontColor
@@ -137,38 +137,6 @@ typeface =
     Internal.Typeface
 
 
-{-| -}
-type alias Adjustment =
-    { capital : Float
-    , lowercase : Float
-    , baseline : Float
-    , descender : Float
-    }
-
-
-{-| -}
-with :
-    { name : String
-    , adjustment : Maybe Adjustment
-    , variants : List Variant
-    }
-    -> Font
-with =
-    Internal.FontWith
-
-
-{-| -}
-sizeByCapital : Attribute msg
-sizeByCapital =
-    Internal.htmlClass classes.sizeByCapital
-
-
-{-| -}
-full : Attribute msg
-full =
-    Internal.htmlClass classes.fullSize
-
-
 {-| **Note** it's likely that `Font.external` will cause a flash on your page on loading.
 
 To bypass this, import your fonts using a separate stylesheet and just use `Font.typeface`.
@@ -200,7 +168,7 @@ external { url, name } =
 
 {-| Font sizes are always given as `px`.
 -}
-size : Int -> Attr decorative msg
+size : Int -> Attribute msg
 size i =
     Internal.StyleClass Flag.fontSize (Internal.FontSize i)
 
@@ -343,25 +311,30 @@ shadow :
     , blur : Float
     , color : Color
     }
-    -> Attr decorative msg
+    -> Attribute msg
 shadow shade =
+    let
+        fullShade =
+            { offset = shade.offset
+            , blur = shade.blur
+            , color = shade.color
+            , size = 0
+            , inset = False
+            }
+    in
     Internal.StyleClass Flag.txtShadows <|
-        Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
+        Internal.Single (Internal.textShadowClass fullShade) "text-shadow" (Internal.formatTextShadow fullShade)
 
 
 {-| A glow is just a simplified shadow.
 -}
-glow : Color -> Float -> Attr decorative msg
+glow : Color -> Float -> Attribute msg
 glow clr i =
-    let
-        shade =
-            { offset = ( 0, 0 )
-            , blur = i * 2
-            , color = clr
-            }
-    in
-    Internal.StyleClass Flag.txtShadows <|
-        Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
+    shadow
+        { offset = ( 0, 0 )
+        , blur = i * 2
+        , color = clr
+        }
 
 
 
@@ -399,13 +372,9 @@ variant var =
                     ("\"" ++ name ++ "\" " ++ String.fromInt index)
 
 
-isSmallCaps x =
-    case x of
-        Internal.VariantActive feat ->
-            feat == "smcp"
-
-        _ ->
-            False
+isSmallCaps : Internal.Variant -> Bool
+isSmallCaps =
+    (==) (Internal.VariantActive "smcp")
 
 
 {-| -}

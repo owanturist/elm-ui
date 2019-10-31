@@ -3,6 +3,11 @@ module Internal.Style exposing (classes, dot, rules)
 {-| -}
 
 
+dot : String -> String
+dot =
+    (++) "."
+
+
 type Class
     = Class String (List Rule)
 
@@ -12,27 +17,14 @@ type Rule
     | Child String (List Rule)
     | Supports ( String, String ) (List ( String, String ))
     | Descriptor String (List Rule)
-    | Adjacent String (List Rule)
     | Batch (List Rule)
-
-
-type StyleClasses
-    = Root
-    | Any
-    | Single
-    | Row
-    | Column
-    | Paragraph
-    | Page
-    | Text
-    | Grid
-    | Spacer
 
 
 
 -- lengths
 
 
+alignments : List Alignment
 alignments =
     [ Top
     , Bottom
@@ -52,31 +44,8 @@ type Location
     | Behind
 
 
+locations : List Location
 locations =
-    let
-        loc =
-            Above
-
-        _ =
-            case loc of
-                Above ->
-                    ()
-
-                Below ->
-                    ()
-
-                OnRight ->
-                    ()
-
-                OnLeft ->
-                    ()
-
-                Within ->
-                    ()
-
-                Behind ->
-                    ()
-    in
     [ Above
     , Below
     , OnRight
@@ -86,6 +55,7 @@ locations =
     ]
 
 
+selfName : SelfDescriptor -> String
 selfName desc =
     case desc of
         Self Top ->
@@ -107,6 +77,7 @@ selfName desc =
             dot classes.alignCenterY
 
 
+contentName : ContentDescriptor -> String
 contentName desc =
     case desc of
         Content Top ->
@@ -262,200 +233,7 @@ classes =
     }
 
 
-{-| The indulgent unicode character version.
--}
-unicode =
-    { root = "style-elements"
-    , any = "s"
-    , single = "e"
-    , row = "⋯"
-    , column = "⋮"
-    , page = "🗏"
-    , paragraph = "p"
-    , text = "text"
-    , grid = "▦"
-
-    -- widhts/heights
-    , widthFill = "↔"
-    , widthContent = "width-content"
-    , widthExact = "width-exact"
-    , heightFill = "↕"
-    , heightContent = "height-content"
-    , heightExact = "height-exact"
-
-    -- nearby elements
-    , above = "above"
-    , below = "below"
-    , onRight = "on-right"
-    , onLeft = "on-left"
-    , inFront = "infront"
-    , behind = "behind"
-
-    -- alignments
-    , alignTop = "⤒"
-    , alignBottom = "⤓"
-    , alignRight = "⇥"
-    , alignLeft = "⇤"
-    , alignCenterX = "self-center-x"
-    , alignCenterY = "self-center-y"
-
-    -- space evenly
-    , spaceEvenly = "space-evenly"
-    , container = "container"
-
-    -- content alignments
-    , contentTop = "content-top"
-    , contentBottom = "content-bottom"
-    , contentRight = "content-right"
-    , contentLeft = "content-left"
-    , contentCenterX = "content-center-x"
-    , contentCenterY = "content-center-y"
-
-    -- selection
-    , noTextSelection = "no-text-selection"
-    , cursorPointer = "cursor-pointer"
-    , cursorText = "cursor-text"
-
-    -- pointer events
-    , passPointerEvents = "pass-pointer-events"
-    , capturePointerEvents = "capture-pointer-events"
-    , transparent = "transparent"
-    , opaque = "opaque"
-
-    --scrollbars
-    , scrollbars = "scrollbars"
-    , scrollbarsX = "scrollbars-x"
-    , scrollbarsY = "scrollbars-y"
-    , clip = "✂"
-    , clipX = "✂x"
-    , clipY = "✂y"
-
-    -- borders
-    , borderNone = "border-none"
-    , borderDashed = "border-dashed"
-    , borderDotted = "border-dotted"
-    , borderSolid = "border-solid"
-
-    -- text weight
-    , textThin = "text-thin"
-    , textExtraLight = "text-extra-light"
-    , textLight = "text-light"
-    , textNormalWeight = "text-normal-weight"
-    , textMedium = "text-medium"
-    , textSemiBold = "text-semi-bold"
-    , bold = "bold"
-    , textExtraBold = "text-extra-bold"
-    , textHeavy = "text-heavy"
-    , italic = "italic"
-    , strike = "strike"
-    , underline = "underline"
-    , textUnitalicized = "text-unitalicized"
-
-    -- text alignment
-    , textJustify = "text-justify"
-    , textJustifyAll = "text-justify-all"
-    , textCenter = "text-center"
-    , textRight = "text-right"
-    , textLeft = "text-left"
-    }
-
-
-single =
-    { root = "z"
-    , any = "s"
-    , single = "e"
-    , row = "r"
-    , column = "c"
-    , page = "l"
-    , paragraph = "p"
-    , text = "t"
-    , grid = "g"
-
-    -- widhts/heights
-    , widthFill = "↔"
-    , widthContent = "wc"
-    , widthExact = "w"
-    , heightFill = "↕"
-    , heightContent = "hc"
-    , heightExact = "h"
-
-    -- nearby elements
-    , above = "o"
-    , below = "u"
-    , onRight = "r"
-    , onLeft = "l"
-    , inFront = "f"
-    , behind = "b"
-
-    -- alignments
-    , alignTop = "⤒"
-    , alignBottom = "⤓"
-    , alignRight = "⇥"
-    , alignLeft = "⇤"
-    , alignCenterX = "self-center-x"
-    , alignCenterY = "self-center-y"
-
-    -- space evenly
-    , spaceEvenly = "space-evenly"
-    , container = "container"
-
-    -- content alignments
-    , contentTop = "c⤒"
-    , contentBottom = "c⤓"
-    , contentRight = "c⇥"
-    , contentLeft = "c⇤"
-    , contentCenterX = "content-center-x"
-    , contentCenterY = "content-center-y"
-
-    -- selection
-    , noTextSelection = "no-text-selection"
-    , cursorPointer = "cursor-pointer"
-    , cursorText = "cursor-text"
-
-    -- pointer events
-    , passPointerEvents = "pass-pointer-events"
-    , capturePointerEvents = "capture-pointer-events"
-    , transparent = "transparent"
-    , opaque = "opaque"
-
-    --scrollbars
-    , scrollbars = "scrollbars"
-    , scrollbarsX = "scrollbars-x"
-    , scrollbarsY = "scrollbars-y"
-    , clip = "✂"
-    , clipX = "✂x"
-    , clipY = "✂y"
-
-    -- borders
-    , borderNone = "border-none"
-    , borderDashed = "border-dashed"
-    , borderDotted = "border-dotted"
-    , borderSolid = "border-solid"
-
-    -- text weight
-    , textThin = "text-thin"
-    , textExtraLight = "text-extra-light"
-    , textLight = "text-light"
-    , textNormalWeight = "text-normal-weight"
-    , textMedium = "text-medium"
-    , textSemiBold = "text-semi-bold"
-    , bold = "b"
-    , textExtraBold = "text-extra-bold"
-    , textHeavy = "text-heavy"
-    , italic = "i"
-    , strike = "-"
-    , underline = "u"
-    , textUnitalicized = "text-unitalicized"
-
-    -- text alignment
-    , textJustify = "text-justify"
-    , textJustifyAll = "text-justify-all"
-    , textCenter = "text-center"
-    , textRight = "text-right"
-    , textLeft = "text-left"
-    }
-
-
+describeAlignment : (Alignment -> ( List Rule, List Rule )) -> Rule
 describeAlignment values =
     let
         createDescription alignment =
@@ -470,10 +248,10 @@ describeAlignment values =
                 ]
             ]
     in
-    Batch <|
-        List.concatMap createDescription alignments
+    Batch (List.concatMap createDescription alignments)
 
 
+gridAlignments : (Alignment -> List Rule) -> Rule
 gridAlignments values =
     let
         createDescription alignment =
@@ -542,15 +320,6 @@ renderRules (Intermediate parent) rulesToRender =
                                 :: rendered.others
                     }
 
-                Adjacent selector adjRules ->
-                    { rendered
-                        | others =
-                            renderRules
-                                (emptyIntermediate (parent.selector ++ " + " ++ selector) "")
-                                adjRules
-                                :: rendered.others
-                    }
-
                 Child child childRules ->
                     { rendered
                         | others =
@@ -577,36 +346,6 @@ renderRules (Intermediate parent) rulesToRender =
                     }
     in
     Intermediate <| List.foldr generateIntermediates parent rulesToRender
-
-
-render : List Class -> String
-render classNames =
-    let
-        renderValues values =
-            values
-                |> List.map (\( x, y ) -> "  " ++ x ++ ": " ++ y ++ ";")
-                |> String.join "\n"
-
-        renderClass rule =
-            case rule.props of
-                [] ->
-                    ""
-
-                _ ->
-                    rule.selector ++ " {\n" ++ renderValues rule.props ++ rule.closing ++ "\n}"
-
-        renderIntermediate (Intermediate rule) =
-            renderClass rule
-                ++ String.join "\n" (List.map renderIntermediate rule.others)
-    in
-    classNames
-        |> List.foldr
-            (\(Class name styleRules) existing ->
-                renderRules (emptyIntermediate name "") styleRules :: existing
-            )
-            []
-        |> List.map renderIntermediate
-        |> String.join "\n"
 
 
 renderCompact : List Class -> String
@@ -639,42 +378,7 @@ renderCompact styleClasses =
         |> String.concat
 
 
-viewportRules : String
-viewportRules =
-    """html, body {
-    height: 100%;
-    width: 100%;
-} """ ++ rules
-
-
-describeText : String -> List Rule -> Rule
-describeText cls props =
-    Descriptor cls
-        (List.map makeImportant props
-            ++ [ Child ".text"
-                    props
-               , Child ".el"
-                    props
-               , Child ".el > .text"
-                    props
-               ]
-        )
-
-
-makeImportant : Rule -> Rule
-makeImportant rule =
-    case rule of
-        Prop name prop ->
-            Prop name (prop ++ " !important")
-
-        _ ->
-            rule
-
-
-dot c =
-    "." ++ c
-
-
+overrides : String
 overrides =
     """@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {"""
         ++ dot classes.any
@@ -695,6 +399,7 @@ overrides =
         ++ explainer
 
 
+inputTextReset : String
 inputTextReset =
     """
 input[type="search"],
@@ -707,6 +412,7 @@ input[type="search"]::-webkit-search-results-decoration {
 """
 
 
+sliderReset : String
 sliderReset =
     """
 input[type=range] {
@@ -724,6 +430,7 @@ input[type=range] {
 """
 
 
+trackReset : String
 trackReset =
     """
 input[type=range]::-moz-range-track {
@@ -741,6 +448,7 @@ input[type=range]::-webkit-slider-runnable-track {
 """
 
 
+thumbReset : String
 thumbReset =
     """
 input[type=range]::-webkit-slider-thumb {
@@ -775,6 +483,7 @@ input[type=range][orient=vertical]{
 """
 
 
+explainer : String
 explainer =
     """
 .explain {
@@ -794,6 +503,7 @@ explainer =
 """
 
 
+commonValues : List Class
 commonValues =
     List.concat
         [ List.map
@@ -833,6 +543,7 @@ commonValues =
         ]
 
 
+fontVariant : String -> List Class
 fontVariant var =
     [ Class (".v-" ++ var)
         [ Prop "font-feature-settings" ("\"" ++ var ++ "\"")
@@ -845,10 +556,10 @@ fontVariant var =
 
 rules : String
 rules =
-    overrides
-        ++ renderCompact (baseSheet ++ commonValues)
+    overrides ++ renderCompact (baseSheet ++ commonValues)
 
 
+elDescription : List Rule
 elDescription =
     [ Prop "display" "flex"
     , Prop "flex-direction" "column"
@@ -942,6 +653,7 @@ elDescription =
     ]
 
 
+baseSheet : List Class
 baseSheet =
     [ Class "html,body"
         [ Prop "height" "100%"
@@ -1243,14 +955,6 @@ baseSheet =
                 [ -- alignTop, centerY, and alignBottom need to be disabled
                   Prop "align-self" "stretch !important"
                 ]
-
-            -- TODO:: This may be necessary..should it move to classes.heightFIll?
-            -- , Child (dot classes.heightFillBetween)
-            --     [ Prop "align-self" "stretch"
-            --     , Descriptor ".aligned-vertically"
-            --         [ Prop "height" "100%"
-            --         ]
-            --     ]
             , Child (dot classes.widthFill)
                 [ Prop "flex-grow" "100000"
                 ]
@@ -1372,14 +1076,6 @@ baseSheet =
                   --   Prop "align-self" "stretch !important"
                   Prop "width" "100%"
                 ]
-
-            -- TODO:: This might be necessary, maybe it should move to widthFill?
-            -- , Child (dot classes.widthFill)
-            --     [ Prop "align-self" "stretch"
-            --     , Descriptor (dot classes.alignedHorizontally)
-            --         [ Prop "width" "100%"
-            --         ]
-            --     ]
             , Child (dot classes.widthContent)
                 [ Prop "align-self" "flex-start"
                 ]

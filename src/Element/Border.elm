@@ -32,14 +32,14 @@ module Element.Border exposing
 
 -}
 
-import Element exposing (Attr, Attribute, Color)
+import Element exposing (Attribute, Color)
 import Internal.Flag as Flag
 import Internal.Model as Internal
-import Internal.Style as Style exposing (classes)
+import Internal.Style exposing (classes)
 
 
 {-| -}
-color : Color -> Attr decorative msg
+color : Color -> Attribute msg
 color clr =
     Internal.StyleClass
         Flag.borderColor
@@ -191,7 +191,7 @@ roundEach { topLeft, topRight, bottomLeft, bottomRight } =
 
 {-| A simple glow by specifying the color and size.
 -}
-glow : Color -> Float -> Attr decorative msg
+glow : Color -> Float -> Attribute msg
 glow clr size =
     shadow
         { offset = ( 0, 0 )
@@ -202,7 +202,7 @@ glow clr size =
 
 
 {-| -}
-innerGlow : Color -> Float -> Attr decorative msg
+innerGlow : Color -> Float -> Attribute msg
 innerGlow clr size =
     innerShadow
         { offset = ( 0, 0 )
@@ -219,7 +219,7 @@ shadow :
     , blur : Float
     , color : Color
     }
-    -> Attr decorative msg
+    -> Attribute msg
 shadow almostShade =
     let
         shade =
@@ -244,7 +244,7 @@ innerShadow :
     , blur : Float
     , color : Color
     }
-    -> Attr decorative msg
+    -> Attribute msg
 innerShadow almostShade =
     let
         shade =
@@ -270,7 +270,7 @@ innerShadow almostShade =
 --     , size : Float
 --     , color : Color
 --     }
---     -> Attr decorative msg
+--     -> Attribute decorative msg
 -- shadow shade =
 --     Internal.BoxShadow
 --         { inset = False
