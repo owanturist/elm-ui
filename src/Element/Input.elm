@@ -851,15 +851,15 @@ zeroBox =
 getPadding : Attribute msg -> Maybe Box
 getPadding attr =
     case attr of
-        Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
+        Internal.StyleClass _ (Internal.PaddingStyle _ t r b l) ->
             -- The - 3 is here to prevent accidental triggering of scrollbars
             -- when things are off by a pixel or two.
             -- (or at least when the browser *thinks* it's off by a pixel or two)
             Just
-                { top = max 0 (floor (toFloat t - 3))
-                , right = max 0 (floor (toFloat r - 3))
-                , bottom = max 0 (floor (toFloat b - 3))
-                , left = max 0 (floor (toFloat l - 3))
+                { top = max 0 (t - 3)
+                , right = max 0 (r - 3)
+                , bottom = max 0 (b - 3)
+                , left = max 0 (l - 3)
                 }
 
         _ ->
@@ -880,7 +880,7 @@ textHelper textInput attrs textOptions =
 
         heightConstrained =
             case textInput.type_ of
-                TextInputNode inputType ->
+                TextInputNode _ ->
                     False
 
                 TextArea ->
@@ -902,7 +902,7 @@ textHelper textInput attrs textOptions =
             Internal.element
                 Internal.asEl
                 (case textInput.type_ of
-                    TextInputNode inputType ->
+                    TextInputNode _ ->
                         Internal.NodeName "input"
 
                     TextArea ->
@@ -1005,7 +1005,7 @@ textHelper textInput attrs textOptions =
                             ]
                         )
 
-                TextInputNode inputType ->
+                TextInputNode _ ->
                     Internal.element
                         Internal.asEl
                         Internal.div
@@ -1105,7 +1105,7 @@ calcMoveToCompensateForPadding attrs =
     let
         gatherSpacing attr found =
             case attr of
-                Internal.StyleClass _ (Internal.SpacingStyle _ x y) ->
+                Internal.StyleClass _ (Internal.SpacingStyle _ _ y) ->
                     case found of
                         Nothing ->
                             Just y
@@ -1164,6 +1164,7 @@ redistribute isMultiline stacked attrs =
            )
 
 
+isFill : Internal.Length -> Bool
 isFill len =
     case len of
         Internal.Fill _ ->
@@ -1182,25 +1183,6 @@ isFill len =
             isFill l
 
 
-isShrink : Internal.Length -> Bool
-isShrink len =
-    case len of
-        Internal.Content ->
-            True
-
-        Internal.Px _ ->
-            False
-
-        Internal.Fill _ ->
-            False
-
-        Internal.Min _ l ->
-            isShrink l
-
-        Internal.Max _ l ->
-            isShrink l
-
-
 isConstrained : Internal.Length -> Bool
 isConstrained len =
     case len of
@@ -1216,7 +1198,7 @@ isConstrained len =
         Internal.Min _ l ->
             isConstrained l
 
-        Internal.Max _ l ->
+        Internal.Max _ _ ->
             True
 
 
@@ -1300,7 +1282,7 @@ redistributeOver isMultiline stacked attr els =
                 , wrapper = attr :: els.wrapper
             }
 
-        Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
+        Internal.StyleClass _ (Internal.PaddingStyle _ t r b l) ->
             if isMultiline then
                 { els
                     | parent = attr :: els.parent
@@ -1355,13 +1337,13 @@ redistributeOver isMultiline stacked attr els =
         Internal.StyleClass _ (Internal.FontFamily _ _) ->
             { els | fullParent = attr :: els.fullParent }
 
-        Internal.StyleClass flag cls ->
+        Internal.StyleClass _ _ ->
             { els | parent = attr :: els.parent }
 
         Internal.NoAttribute ->
             els
 
-        Internal.Attr a ->
+        Internal.Attr _ ->
             { els | input = attr :: els.input }
 
         Internal.Describe _ ->
@@ -1576,7 +1558,7 @@ isHiddenLabel label =
 applyLabel : List (Attribute msg) -> Label msg -> Element msg -> Element msg
 applyLabel attrs label input =
     case label of
-        HiddenLabel labelText ->
+        HiddenLabel _ ->
             -- NOTE: This means that the label is applied outside of this function!
             -- It would be nice to unify this logic, but it's a little tricky
             Internal.element

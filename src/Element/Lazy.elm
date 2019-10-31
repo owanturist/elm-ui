@@ -61,18 +61,22 @@ apply1 fn a =
     embed (fn a)
 
 
+apply2 : (a -> b -> Element msg) -> a -> b -> LayoutContext -> VirtualDom.Node msg
 apply2 fn a b =
     embed (fn a b)
 
 
+apply3 : (a -> b -> c -> Element msg) -> a -> b -> c -> LayoutContext -> VirtualDom.Node msg
 apply3 fn a b c =
     embed (fn a b c)
 
 
+apply4 : (a -> b -> c -> d -> Element msg) -> a -> b -> c -> d -> LayoutContext -> VirtualDom.Node msg
 apply4 fn a b c d =
     embed (fn a b c d)
 
 
+apply5 : (a -> b -> c -> d -> e -> Element msg) -> a -> b -> c -> d -> e -> LayoutContext -> VirtualDom.Node msg
 apply5 fn a b c d e =
     embed (fn a b c d e)
 

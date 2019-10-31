@@ -437,12 +437,12 @@ fillPortion =
 -}
 layout : List (Attribute msg) -> Element msg -> Html msg
 layout =
-    layoutWith { options = [] }
+    layoutWith []
 
 
 {-| -}
-layoutWith : { options : List Option } -> List (Attribute msg) -> Element msg -> Html msg
-layoutWith { options } attrs child =
+layoutWith : List Option -> List (Attribute msg) -> Element msg -> Html msg
+layoutWith options attrs child =
     Internal.renderRoot options
         (Internal.htmlClass
             (String.join " "
@@ -636,7 +636,7 @@ wrappedRow attrs children =
             let
                 newPadding =
                     case padded of
-                        Just (Internal.Padding name t r b l) ->
+                        Just (Internal.Padding _ t r b l) ->
                             if r >= (x // 2) && b >= (y // 2) then
                                 Just <|
                                     paddingEach
