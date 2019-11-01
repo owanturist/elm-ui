@@ -39,7 +39,7 @@ import Internal.Style exposing (classes)
 
 
 {-| -}
-color : Color -> Attribute msg
+color : Color -> Attribute { support | borderColor : () } msg
 color clr =
     Internal.StyleClass
         Flag.borderColor
@@ -50,37 +50,42 @@ color clr =
         )
 
 
+widthHelp : Int -> Int -> Int -> Int -> Attribute support msg
+widthHelp top right bottom left =
+    let
+        fragments =
+            if right /= left then
+                [ top, right, bottom, left ]
+
+            else if top /= bottom then
+                [ top, right, bottom ]
+
+            else if top /= right then
+                [ top, right ]
+
+            else
+                [ top ]
+    in
+    Internal.BorderWidth
+        (String.concat ("b-" :: List.map String.fromInt fragments))
+        top
+        right
+        bottom
+        left
+        |> Internal.StyleClass Flag.borderWidth
+
+
 {-| -}
-width : Int -> Attribute msg
+width : Int -> Attribute { support | borderWidth : () } msg
 width v =
-    Internal.StyleClass
-        Flag.borderWidth
-        (Internal.BorderWidth
-            ("b-" ++ String.fromInt v)
-            v
-            v
-            v
-            v
-        )
+    widthHelp v v v v
 
 
 {-| Set horizontal and vertical borders.
 -}
-widthXY : Int -> Int -> Attribute msg
+widthXY : Int -> Int -> Attribute { support | borderWidthXY : () } msg
 widthXY x y =
-    Internal.StyleClass
-        Flag.borderWidth
-        (Internal.BorderWidth
-            ("b-"
-                ++ String.fromInt x
-                ++ "-"
-                ++ String.fromInt y
-            )
-            y
-            x
-            y
-            x
-        )
+    widthXY y x
 
 
 {-| -}
@@ -90,63 +95,32 @@ widthEach :
     , right : Int
     , top : Int
     }
-    -> Attribute msg
-widthEach { bottom, top, left, right } =
-    if top == bottom && left == right then
-        if top == right then
-            width top
-
-        else
-            widthXY left top
-
-    else
-        Internal.StyleClass Flag.borderWidth
-            (Internal.BorderWidth
-                ("b-"
-                    ++ String.fromInt top
-                    ++ "-"
-                    ++ String.fromInt right
-                    ++ "-"
-                    ++ String.fromInt bottom
-                    ++ "-"
-                    ++ String.fromInt left
-                )
-                top
-                right
-                bottom
-                left
-            )
-
-
-
--- {-| No Borders
--- -}
--- none : Attribute msg
--- none =
---     Class "border" "border-none"
+    -> Attribute { support | borderWidthEach : () } msg
+widthEach { top, right, bottom, left } =
+    widthHelp top right bottom left
 
 
 {-| -}
-solid : Attribute msg
+solid : Attribute { support | borderSolid : () } msg
 solid =
     Internal.Class Flag.borderStyle classes.borderSolid
 
 
 {-| -}
-dashed : Attribute msg
+dashed : Attribute { support | borderDashed : () } msg
 dashed =
     Internal.Class Flag.borderStyle classes.borderDashed
 
 
 {-| -}
-dotted : Attribute msg
+dotted : Attribute { support | borderDotted : () } msg
 dotted =
     Internal.Class Flag.borderStyle classes.borderDotted
 
 
 {-| Round all corners.
 -}
-rounded : Int -> Attribute msg
+rounded : Int -> Attribute { support | borderRounded : () } msg
 rounded radius =
     Internal.StyleClass
         Flag.borderRound
@@ -164,7 +138,7 @@ roundEach :
     , bottomLeft : Int
     , bottomRight : Int
     }
-    -> Attribute msg
+    -> Attribute { support | borderRoundEach : () } msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
     Internal.StyleClass Flag.borderRound
         (Internal.Single
@@ -189,11 +163,37 @@ roundEach { topLeft, topRight, bottomLeft, bottomRight } =
         )
 
 
+shadowHelp :
+    Bool
+    ->
+        { offset : ( Float, Float )
+        , size : Float
+        , blur : Float
+        , color : Color
+        }
+    -> Attribute support msg
+shadowHelp inset almostShade =
+    let
+        shade =
+            { inset = inset
+            , offset = almostShade.offset
+            , size = almostShade.size
+            , blur = almostShade.blur
+            , color = almostShade.color
+            }
+    in
+    Internal.StyleClass Flag.shadows <|
+        Internal.Single
+            (Internal.boxShadowClass shade)
+            "box-shadow"
+            (Internal.formatBoxShadow shade)
+
+
 {-| A simple glow by specifying the color and size.
 -}
-glow : Color -> Float -> Attribute msg
+glow : Color -> Float -> Attribute { support | borderGlow : () } msg
 glow clr size =
-    shadow
+    shadowHelp False
         { offset = ( 0, 0 )
         , size = size
         , blur = size * 2
@@ -202,9 +202,9 @@ glow clr size =
 
 
 {-| -}
-innerGlow : Color -> Float -> Attribute msg
+innerGlow : Color -> Float -> Attribute { support | borderInnerGlow : () } msg
 innerGlow clr size =
-    innerShadow
+    shadowHelp True
         { offset = ( 0, 0 )
         , size = size
         , blur = size * 2
@@ -219,22 +219,9 @@ shadow :
     , blur : Float
     , color : Color
     }
-    -> Attribute msg
-shadow almostShade =
-    let
-        shade =
-            { inset = False
-            , offset = almostShade.offset
-            , size = almostShade.size
-            , blur = almostShade.blur
-            , color = almostShade.color
-            }
-    in
-    Internal.StyleClass Flag.shadows <|
-        Internal.Single
-            (Internal.boxShadowClass shade)
-            "box-shadow"
-            (Internal.formatBoxShadow shade)
+    -> Attribute { support | borderShadow : () } msg
+shadow =
+    shadowHelp False
 
 
 {-| -}
@@ -244,38 +231,6 @@ innerShadow :
     , blur : Float
     , color : Color
     }
-    -> Attribute msg
-innerShadow almostShade =
-    let
-        shade =
-            { inset = True
-            , offset = almostShade.offset
-            , size = almostShade.size
-            , blur = almostShade.blur
-            , color = almostShade.color
-            }
-    in
-    Internal.StyleClass Flag.shadows <|
-        Internal.Single
-            (Internal.boxShadowClass shade)
-            "box-shadow"
-            (Internal.formatBoxShadow shade)
-
-
-
--- {-| -}
--- shadow :
---     { offset : ( Float, Float )
---     , blur : Float
---     , size : Float
---     , color : Color
---     }
---     -> Attribute decorative msg
--- shadow shade =
---     Internal.BoxShadow
---         { inset = False
---         , offset = shade.offset
---         , size = shade.size
---         , blur = shade.blur
---         , color = shade.color
---         }
+    -> Attribute { support | borderInnerShadow : () } msg
+innerShadow =
+    shadowHelp True

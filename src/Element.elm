@@ -1,6 +1,6 @@
 module Element exposing
     ( Element, none, text, el
-    , row, wrappedRow, column
+    , row, wrappedRow, col
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
     , Attribute, width, height, Length, px, shrink, fill, fillPortion, maximum, minimum
@@ -36,9 +36,9 @@ module Element exposing
 
 When we want more than one child on an element, we want to be _specific_ about how they will be laid out.
 
-So, the common ways to do that would be `row` and `column`.
+So, the common ways to do that would be `row` and `col`.
 
-@docs row, wrappedRow, column
+@docs row, wrappedRow, col
 
 
 # Text Layout
@@ -328,14 +328,14 @@ type alias Element msg =
 
 {-| An attribute that can be attached to an `Element`
 -}
-type alias Attribute msg =
-    Internal.Attribute msg
+type alias Attribute support msg =
+    Internal.Attribute support msg
 
 
 {-| Only decorations
 -}
-type alias Decoration =
-    Internal.Attribute Never
+type alias Decoration support =
+    Internal.Attribute support Never
 
 
 {-| -}
@@ -345,7 +345,7 @@ html =
 
 
 {-| -}
-htmlAttribute : Html.Attribute msg -> Attribute msg
+htmlAttribute : Html.Attribute msg -> Attribute { support | htmlAttribute : () } msg
 htmlAttribute =
     Internal.Attr
 
@@ -357,7 +357,7 @@ map =
 
 
 {-| -}
-mapAttribute : (msg -> msg1) -> Attribute msg -> Attribute msg1
+mapAttribute : (msg -> msg1) -> Attribute support msg -> Attribute support msg1
 mapAttribute =
     Internal.mapAttr
 
@@ -435,13 +435,13 @@ fillPortion =
 
 {-| This is your top level node where you can turn `Element` into `Html`.
 -}
-layout : List (Attribute msg) -> Element msg -> Html msg
+layout : List (Attribute {} msg) -> Element msg -> Html msg
 layout =
     layoutWith []
 
 
 {-| -}
-layoutWith : List Option -> List (Attribute msg) -> Element msg -> Html msg
+layoutWith : List Option -> List (Attribute {} msg) -> Element msg -> Html msg
 layoutWith options attrs child =
     Internal.renderRoot options
         (Internal.htmlClass
@@ -562,7 +562,23 @@ If you want multiple children, you'll need to use something like `row` or `colum
             (Element.text "You've made a stylish element!")
 
 -}
-el : List (Attribute msg) -> Element msg -> Element msg
+el :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , centerX : ()
+            , centerY : ()
+            , borderRounded : ()
+            , borderWidth : ()
+            , borderColor : ()
+            , backgroundColor : ()
+            , behindContent : ()
+            }
+            msg
+        )
+    -> Element msg
+    -> Element msg
 el attrs child =
     Internal.element
         Internal.asEl
@@ -575,7 +591,18 @@ el attrs child =
 
 
 {-| -}
-row : List (Attribute msg) -> List (Element msg) -> Element msg
+row :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , centerX : ()
+            , centerY : ()
+            }
+            msg
+        )
+    -> List (Element msg)
+    -> Element msg
 row attrs children =
     Internal.element
         Internal.asRow
@@ -589,8 +616,19 @@ row attrs children =
 
 
 {-| -}
-column : List (Attribute msg) -> List (Element msg) -> Element msg
-column attrs children =
+col :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , centerX : ()
+            , centerY : ()
+            }
+            msg
+        )
+    -> List (Element msg)
+    -> Element msg
+col attrs children =
     Internal.element
         Internal.asColumn
         Internal.div
@@ -608,7 +646,17 @@ column attrs children =
 
 {-| Same as `row`, but will wrap if it takes up too much horizontal space.
 -}
-wrappedRow : List (Attribute msg) -> List (Element msg) -> Element msg
+wrappedRow :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , paddingEach : ()
+            }
+            msg
+        )
+    -> List (Element msg)
+    -> Element msg
 wrappedRow attrs children =
     let
         ( padded, spaced ) =
@@ -741,7 +789,7 @@ type alias Todo =
         (text "Help, I'm being debugged!")
 
 -}
-explain : Todo -> Attribute msg
+explain : Todo -> Attribute { support | explain : () } msg
 explain _ =
     Internal.htmlClass "explain"
 
@@ -799,7 +847,13 @@ We could render it using
 
 -}
 table :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
     ->
         { data : List records
         , columns : List (Column records msg)
@@ -824,7 +878,13 @@ type alias IndexedColumn record msg =
 {-| Same as `Element.table` except the `view` for each column will also receive the row index as well as the record.
 -}
 indexedTable :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
     ->
         { data : List records
         , columns : List (IndexedColumn records msg)
@@ -851,22 +911,31 @@ type InternalTableColumn record msg
     | InternalColumn (Column record msg)
 
 
-tableHelper : List (Attribute msg) -> InternalTable data msg -> Element msg
+tableHelper :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
+    -> InternalTable data msg
+    -> Element msg
 tableHelper attrs config =
     let
         ( sX, sY ) =
             Internal.getSpacing attrs ( 0, 0 )
 
-        columnHeader col =
-            case col of
+        columnHeader column =
+            case column of
                 InternalIndexedColumn colConfig ->
                     colConfig.header
 
                 InternalColumn colConfig ->
                     colConfig.header
 
-        columnWidth col =
-            case col of
+        columnWidth column =
+            case column of
                 InternalIndexedColumn colConfig ->
                     colConfig.width
 
@@ -880,7 +949,7 @@ tableHelper attrs config =
                             Nothing
 
                         else
-                            Just (List.indexedMap (\col header -> onGrid 1 (col + 1) header) headers)
+                            Just (List.indexedMap (\index header -> onGrid 1 (index + 1) header) headers)
                    )
 
         template =
@@ -908,12 +977,12 @@ tableHelper attrs config =
 
         add cell columnConfig cursor =
             case columnConfig of
-                InternalIndexedColumn col ->
+                InternalIndexedColumn column ->
                     { cursor
                         | elements =
                             onGrid cursor.row
                                 cursor.column
-                                (col.view
+                                (column.view
                                     (if maybeHeaders == Nothing then
                                         cursor.row - 1
 
@@ -926,9 +995,9 @@ tableHelper attrs config =
                         , column = cursor.column + 1
                     }
 
-                InternalColumn col ->
+                InternalColumn column ->
                     { elements =
-                        onGrid cursor.row cursor.column (col.view cell)
+                        onGrid cursor.row cursor.column (column.view cell)
                             :: cursor.elements
                     , column = cursor.column + 1
                     , row = cursor.row
@@ -1013,7 +1082,17 @@ Which will look something like
 **Note** `spacing` on a paragraph will set the pixel spacing between lines.
 
 -}
-paragraph : List (Attribute msg) -> List (Element msg) -> Element msg
+paragraph :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , spacing : ()
+            }
+            msg
+        )
+    -> List (Element msg)
+    -> Element msg
 paragraph attrs children =
     Internal.element
         Internal.asParagraph
@@ -1045,7 +1124,16 @@ Which will result in something like:
 ![A text layout where an image is on the left.](https://mdgriffith.gitbooks.io/style-elements/content/assets/Screen%20Shot%202017-08-25%20at%208.42.39%20PM.png)
 
 -}
-textColumn : List (Attribute msg) -> List (Element msg) -> Element msg
+textColumn :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
+    -> List (Element msg)
+    -> Element msg
 textColumn attrs children =
     Internal.element
         Internal.asTextColumn
@@ -1069,7 +1157,7 @@ Leaving the description blank will cause the image to be ignored by assistive te
 So, take a moment to describe your image as you would to someone who has a harder time seeing.
 
 -}
-image : List (Attribute msg) -> { src : String, description : String } -> Element msg
+image : List (Attribute {} msg) -> { src : String, description : String } -> Element msg
 image attrs { src, description } =
     let
         imageAttributes =
@@ -1116,7 +1204,13 @@ image attrs { src, description } =
 
 -}
 link :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
     ->
         { url : String
         , label : Element msg
@@ -1144,7 +1238,13 @@ link attrs { url, label } =
 
 {-| -}
 newTabLink :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
     ->
         { url : String
         , label : Element msg
@@ -1179,7 +1279,13 @@ newTabLink attrs { url, label } =
 
 -}
 download :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
     ->
         { url : String
         , label : Element msg
@@ -1203,7 +1309,13 @@ download attrs { url, label } =
 {-| A link to download a file, but you can specify the filename.
 -}
 downloadAs :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            }
+            msg
+        )
     ->
         { label : Element msg
         , filename : String
@@ -1229,7 +1341,7 @@ downloadAs attrs { url, filename, label } =
 {- NEARBYS -}
 
 
-createNearby : Internal.Location -> Element msg -> Attribute msg
+createNearby : Internal.Location -> Element msg -> Attribute support msg
 createNearby loc element =
     case element of
         Internal.Empty ->
@@ -1240,25 +1352,25 @@ createNearby loc element =
 
 
 {-| -}
-below : Element msg -> Attribute msg
+below : Element msg -> Attribute { support | below : () } msg
 below element =
     createNearby Internal.Below element
 
 
 {-| -}
-above : Element msg -> Attribute msg
+above : Element msg -> Attribute { support | above : () } msg
 above element =
     createNearby Internal.Above element
 
 
 {-| -}
-onRight : Element msg -> Attribute msg
+onRight : Element msg -> Attribute { support | onRight : () } msg
 onRight element =
     createNearby Internal.OnRight element
 
 
 {-| -}
-onLeft : Element msg -> Attribute msg
+onLeft : Element msg -> Attribute { support | onLeft : () } msg
 onLeft element =
     createNearby Internal.OnLeft element
 
@@ -1268,76 +1380,76 @@ onLeft element =
 **Note:** If you use this on a `layout` element, it will place the element as fixed to the viewport which can be useful for modals and overlays.
 
 -}
-inFront : Element msg -> Attribute msg
+inFront : Element msg -> Attribute { support | inFront : () } msg
 inFront element =
     createNearby Internal.InFront element
 
 
 {-| This will place an element between the background and the content of an element.
 -}
-behindContent : Element msg -> Attribute msg
+behindContent : Element msg -> Attribute { support | behindContent : () } msg
 behindContent element =
     createNearby Internal.Behind element
 
 
 {-| -}
-width : Length -> Attribute msg
+width : Length -> Attribute { support | width : () } msg
 width =
     Internal.Width
 
 
 {-| -}
-height : Length -> Attribute msg
+height : Length -> Attribute { support | height : () } msg
 height =
     Internal.Height
 
 
 {-| -}
-scale : Float -> Attribute msg
+scale : Float -> Attribute { support | scale : () } msg
 scale n =
     Internal.TransformComponent Flag.scale (Internal.Scale ( n, n, 1 ))
 
 
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
-rotate : Float -> Attribute msg
+rotate : Float -> Attribute { support | rotate : () } msg
 rotate angle =
     Internal.TransformComponent Flag.rotate (Internal.Rotate ( 0, 0, 1 ) angle)
 
 
 {-| -}
-moveUp : Float -> Attribute msg
+moveUp : Float -> Attribute { support | moveUp : () } msg
 moveUp y =
     Internal.TransformComponent Flag.moveY (Internal.MoveY (negate y))
 
 
 {-| -}
-moveDown : Float -> Attribute msg
+moveDown : Float -> Attribute { support | moveDown : () } msg
 moveDown y =
     Internal.TransformComponent Flag.moveY (Internal.MoveY y)
 
 
 {-| -}
-moveRight : Float -> Attribute msg
+moveRight : Float -> Attribute { support | moveRight : () } msg
 moveRight x =
     Internal.TransformComponent Flag.moveX (Internal.MoveX x)
 
 
 {-| -}
-moveLeft : Float -> Attribute msg
+moveLeft : Float -> Attribute { support | moveLeft : () } msg
 moveLeft x =
     Internal.TransformComponent Flag.moveX (Internal.MoveX (negate x))
 
 
 {-| -}
-padding : Int -> Attribute msg
+padding : Int -> Attribute { support | padding : () } msg
 padding x =
     Internal.StyleClass Flag.padding (Internal.PaddingStyle ("p-" ++ String.fromInt x) x x x x)
 
 
 {-| Set horizontal and vertical padding.
 -}
-paddingXY : Int -> Int -> Attribute msg
+paddingXY : Int -> Int -> Attribute { support | paddingXY : () } msg
 paddingXY x y =
     if x == y then
         Internal.StyleClass Flag.padding (Internal.PaddingStyle ("p-" ++ String.fromInt x) x x x x)
@@ -1367,7 +1479,7 @@ And then just do
     paddingEach { edges | right = 5 }
 
 -}
-paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute msg
+paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute { support | paddingEach : () } msg
 paddingEach { top, right, bottom, left } =
     if top == right && top == bottom && top == left then
         Internal.StyleClass Flag.padding (Internal.PaddingStyle ("p-" ++ String.fromInt top) top top top top)
@@ -1384,49 +1496,49 @@ paddingEach { top, right, bottom, left } =
 
 
 {-| -}
-centerX : Attribute msg
+centerX : Attribute { support | centerX : () } msg
 centerX =
     Internal.AlignX Internal.CenterX
 
 
 {-| -}
-centerY : Attribute msg
+centerY : Attribute { support | centerY : () } msg
 centerY =
     Internal.AlignY Internal.CenterY
 
 
 {-| -}
-alignTop : Attribute msg
+alignTop : Attribute { support | alignTop : () } msg
 alignTop =
     Internal.AlignY Internal.Top
 
 
 {-| -}
-alignBottom : Attribute msg
+alignBottom : Attribute { support | alignBottom : () } msg
 alignBottom =
     Internal.AlignY Internal.Bottom
 
 
 {-| -}
-alignLeft : Attribute msg
+alignLeft : Attribute { support | alignLeft : () } msg
 alignLeft =
     Internal.AlignX Internal.Left
 
 
 {-| -}
-alignRight : Attribute msg
+alignRight : Attribute { support | alignRight : () } msg
 alignRight =
     Internal.AlignX Internal.Right
 
 
 {-| -}
-spaceEvenly : Attribute msg
+spaceEvenly : Attribute { support | spaceEvenly : () } msg
 spaceEvenly =
     Internal.Class Flag.spacing Internal.Style.classes.spaceEvenly
 
 
 {-| -}
-spacing : Int -> Attribute msg
+spacing : Int -> Attribute { support | spacing : () } msg
 spacing x =
     Internal.StyleClass Flag.spacing (Internal.SpacingStyle (Internal.spacingName x x) x x)
 
@@ -1436,14 +1548,14 @@ spacing x =
 However for some layouts, like `textColumn`, you may want to set a different spacing for the x axis compared to the y axis.
 
 -}
-spacingXY : Int -> Int -> Attribute msg
+spacingXY : Int -> Int -> Attribute { support | spacingXY : () } msg
 spacingXY x y =
     Internal.StyleClass Flag.spacing (Internal.SpacingStyle (Internal.spacingName x y) x y)
 
 
 {-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
 -}
-transparent : Bool -> Attribute msg
+transparent : Bool -> Attribute { support | transparent : () } msg
 transparent on =
     if on then
         Internal.StyleClass Flag.transparency (Internal.Transparency "transparent" 1.0)
@@ -1457,7 +1569,7 @@ transparent on =
 Semantically equivalent to html opacity.
 
 -}
-alpha : Float -> Attribute msg
+alpha : Float -> Attribute { support | alpha : () } msg
 alpha o =
     let
         transparency =
@@ -1469,55 +1581,45 @@ alpha o =
     Internal.StyleClass Flag.transparency <| Internal.Transparency ("transparency-" ++ Internal.floatClass transparency) transparency
 
 
-
--- {-| -}
--- hidden : Bool -> Attribute msg
--- hidden on =
---     if on then
---         Internal.class "hidden"
---     else
---         Internal.NoAttribute
-
-
 {-| -}
-scrollbars : Attribute msg
+scrollbars : Attribute { support | scrollbars : () } msg
 scrollbars =
     Internal.Class Flag.overflow classes.scrollbars
 
 
 {-| -}
-scrollbarY : Attribute msg
+scrollbarY : Attribute { support | scrollbarY : () } msg
 scrollbarY =
     Internal.Class Flag.overflow classes.scrollbarsY
 
 
 {-| -}
-scrollbarX : Attribute msg
+scrollbarX : Attribute { support | scrollbarX : () } msg
 scrollbarX =
     Internal.Class Flag.overflow classes.scrollbarsX
 
 
 {-| -}
-clip : Attribute msg
+clip : Attribute { support | clip : () } msg
 clip =
     Internal.Class Flag.overflow classes.clip
 
 
 {-| -}
-clipY : Attribute msg
+clipY : Attribute { support | clipY : () } msg
 clipY =
     Internal.Class Flag.overflow classes.clipY
 
 
 {-| -}
-clipX : Attribute msg
+clipX : Attribute { support | clipX : () } msg
 clipX =
     Internal.Class Flag.overflow classes.clipX
 
 
 {-| Set the cursor to be a pointing hand when it's hovering over this element.
 -}
-pointer : Attribute msg
+pointer : Attribute { support | pointer : () } msg
 pointer =
     Internal.Class Flag.cursor classes.cursorPointer
 
@@ -1612,7 +1714,7 @@ modular normal ratio rescale =
 
 
 {-| -}
-mouseOver : List Decoration -> Attribute msg
+mouseOver : List (Decoration {}) -> Attribute { support | mouseOver : () } msg
 mouseOver decs =
     Internal.StyleClass Flag.hover <|
         Internal.PseudoSelector Internal.Hover
@@ -1620,7 +1722,7 @@ mouseOver decs =
 
 
 {-| -}
-mouseDown : List Decoration -> Attribute msg
+mouseDown : List (Decoration {}) -> Attribute { support | mouseDown : () } msg
 mouseDown decs =
     Internal.StyleClass Flag.active <|
         Internal.PseudoSelector Internal.Active
@@ -1628,7 +1730,7 @@ mouseDown decs =
 
 
 {-| -}
-focused : List Decoration -> Attribute msg
+focused : List (Decoration {}) -> Attribute { support | focused : () } msg
 focused decs =
     Internal.StyleClass Flag.focus <|
         Internal.PseudoSelector Internal.Focus

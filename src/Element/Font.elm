@@ -77,7 +77,7 @@ type alias Font =
 
 
 {-| -}
-color : Color -> Attribute msg
+color : Color -> Attribute { support | fontColor : () } msg
 color fontColor =
     Internal.StyleClass
         Flag.fontColor
@@ -103,7 +103,7 @@ color fontColor =
             (text "")
 
 -}
-family : List Font -> Attribute msg
+family : List Font -> Attribute { support | fontFamily : () } msg
 family families =
     Internal.StyleClass
         Flag.fontFamily
@@ -168,14 +168,14 @@ external { url, name } =
 
 {-| Font sizes are always given as `px`.
 -}
-size : Int -> Attribute msg
+size : Int -> Attribute { support | fontSize : () } msg
 size i =
     Internal.StyleClass Flag.fontSize (Internal.FontSize i)
 
 
 {-| In `px`.
 -}
-letterSpacing : Float -> Attribute msg
+letterSpacing : Float -> Attribute { support | fontLetterSpacing : () } msg
 letterSpacing offset =
     Internal.StyleClass Flag.letterSpacing <|
         Internal.Single
@@ -186,7 +186,7 @@ letterSpacing offset =
 
 {-| In `px`.
 -}
-wordSpacing : Float -> Attribute msg
+wordSpacing : Float -> Attribute { support | fontWordSpacing : () } msg
 wordSpacing offset =
     Internal.StyleClass Flag.wordSpacing <|
         Internal.Single ("ws-" ++ Internal.floatClass offset) "word-spacing" (String.fromFloat offset ++ "px")
@@ -194,115 +194,126 @@ wordSpacing offset =
 
 {-| Align the font to the left.
 -}
-alignLeft : Attribute msg
+alignLeft : Attribute { support | fontAlignLeft : () } msg
 alignLeft =
     Internal.Class Flag.fontAlignment classes.textLeft
 
 
 {-| Align the font to the right.
 -}
-alignRight : Attribute msg
+alignRight : Attribute { support | fontAlignRight : () } msg
 alignRight =
     Internal.Class Flag.fontAlignment classes.textRight
 
 
 {-| Center align the font.
 -}
-center : Attribute msg
+center : Attribute { support | fontCenter : () } msg
 center =
     Internal.Class Flag.fontAlignment classes.textCenter
 
 
 {-| -}
-justify : Attribute msg
+justify : Attribute { support | fontJustify : () } msg
 justify =
     Internal.Class Flag.fontAlignment classes.textJustify
 
 
-
--- {-| -}
--- justifyAll : Attribute msg
--- justifyAll =
---     Internal.class classesTextJustifyAll
-
-
 {-| -}
-underline : Attribute msg
+underline : Attribute { support | fontUnderline : () } msg
 underline =
     Internal.htmlClass classes.underline
 
 
 {-| -}
-strike : Attribute msg
+strike : Attribute { support | fontStrike : () } msg
 strike =
     Internal.htmlClass classes.strike
 
 
 {-| -}
-italic : Attribute msg
+italic : Attribute { support | fontItalic : () } msg
 italic =
     Internal.htmlClass classes.italic
 
 
 {-| -}
-bold : Attribute msg
+bold : Attribute { support | fontBold : () } msg
 bold =
     Internal.Class Flag.fontWeight classes.bold
 
 
 {-| -}
-light : Attribute msg
+light : Attribute { support | fontLight : () } msg
 light =
     Internal.Class Flag.fontWeight classes.textLight
 
 
 {-| -}
-hairline : Attribute msg
+hairline : Attribute { support | fontHairline : () } msg
 hairline =
     Internal.Class Flag.fontWeight classes.textThin
 
 
 {-| -}
-extraLight : Attribute msg
+extraLight : Attribute { support | fontExtraLight : () } msg
 extraLight =
     Internal.Class Flag.fontWeight classes.textExtraLight
 
 
 {-| -}
-regular : Attribute msg
+regular : Attribute { support | fontRegular : () } msg
 regular =
     Internal.Class Flag.fontWeight classes.textNormalWeight
 
 
 {-| -}
-semiBold : Attribute msg
+semiBold : Attribute { support | fontSemiBold : () } msg
 semiBold =
     Internal.Class Flag.fontWeight classes.textSemiBold
 
 
 {-| -}
-medium : Attribute msg
+medium : Attribute { support | fontMedium : () } msg
 medium =
     Internal.Class Flag.fontWeight classes.textMedium
 
 
 {-| -}
-extraBold : Attribute msg
+extraBold : Attribute { support | fontExtraBold : () } msg
 extraBold =
     Internal.Class Flag.fontWeight classes.textExtraBold
 
 
 {-| -}
-heavy : Attribute msg
+heavy : Attribute { support | fontHeavy : () } msg
 heavy =
     Internal.Class Flag.fontWeight classes.textHeavy
 
 
 {-| This will reset bold and italic.
 -}
-unitalicized : Attribute msg
+unitalicized : Attribute { support | fontUnitalicized : () } msg
 unitalicized =
     Internal.htmlClass classes.textUnitalicized
+
+
+shadowHelp : ( Float, Float ) -> Float -> Color -> Attribute support msg
+shadowHelp offset blur clr =
+    let
+        shade =
+            { offset = offset
+            , blur = blur
+            , color = clr
+            , size = 0
+            , inset = False
+            }
+    in
+    Internal.Single
+        (Internal.textShadowClass shade)
+        "text-shadow"
+        (Internal.formatTextShadow shade)
+        |> Internal.StyleClass Flag.txtShadows
 
 
 {-| -}
@@ -311,30 +322,16 @@ shadow :
     , blur : Float
     , color : Color
     }
-    -> Attribute msg
+    -> Attribute { support | fontShadow : () } msg
 shadow shade =
-    let
-        fullShade =
-            { offset = shade.offset
-            , blur = shade.blur
-            , color = shade.color
-            , size = 0
-            , inset = False
-            }
-    in
-    Internal.StyleClass Flag.txtShadows <|
-        Internal.Single (Internal.textShadowClass fullShade) "text-shadow" (Internal.formatTextShadow fullShade)
+    shadowHelp shade.offset shade.blur shade.color
 
 
 {-| A glow is just a simplified shadow.
 -}
-glow : Color -> Float -> Attribute msg
+glow : Color -> Float -> Attribute { support | fontGlow : () } msg
 glow clr i =
-    shadow
-        { offset = ( 0, 0 )
-        , blur = i * 2
-        , color = clr
-        }
+    shadowHelp ( 0, 0 ) (2 * i) clr
 
 
 
@@ -356,7 +353,7 @@ type alias Variant =
 **Note** These will **not** stack. If you want multiple variants, you should use `Font.variantList`.
 
 -}
-variant : Variant -> Attribute msg
+variant : Variant -> Attribute { support | fontVariant : () } msg
 variant var =
     case var of
         Internal.VariantActive name ->
@@ -378,7 +375,7 @@ isSmallCaps =
 
 
 {-| -}
-variantList : List Variant -> Attribute msg
+variantList : List Variant -> Attribute { support | fontVariantList : () } msg
 variantList vars =
     let
         features =

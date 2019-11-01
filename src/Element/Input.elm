@@ -196,7 +196,7 @@ import Json.Decode as Json
 
 {-| -}
 type Placeholder msg
-    = Placeholder (List (Attribute msg)) (Element msg)
+    = Placeholder (List (Attribute {} msg)) (Element msg)
 
 
 white : Color
@@ -218,7 +218,7 @@ charcoal =
 
 
 {-| -}
-placeholder : List (Attribute msg) -> Element msg -> Placeholder msg
+placeholder : List (Attribute {} msg) -> Element msg -> Placeholder msg
 placeholder =
     Placeholder
 
@@ -232,7 +232,7 @@ type LabelLocation
 
 {-| -}
 type Label msg
-    = Label LabelLocation (List (Attribute msg)) (Element msg)
+    = Label LabelLocation (List (Attribute {} msg)) (Element msg)
     | HiddenLabel String
 
 
@@ -258,25 +258,25 @@ isStacked label =
 
 
 {-| -}
-labelRight : List (Attribute msg) -> Element msg -> Label msg
+labelRight : List (Attribute {} msg) -> Element msg -> Label msg
 labelRight =
     Label OnRight
 
 
 {-| -}
-labelLeft : List (Attribute msg) -> Element msg -> Label msg
+labelLeft : List (Attribute {} msg) -> Element msg -> Label msg
 labelLeft =
     Label OnLeft
 
 
 {-| -}
-labelAbove : List (Attribute msg) -> Element msg -> Label msg
+labelAbove : List (Attribute {} msg) -> Element msg -> Label msg
 labelAbove =
     Label Above
 
 
 {-| -}
-labelBelow : List (Attribute msg) -> Element msg -> Label msg
+labelBelow : List (Attribute {} msg) -> Element msg -> Label msg
 labelBelow =
     Label Below
 
@@ -298,7 +298,7 @@ labelHidden =
     HiddenLabel
 
 
-hiddenLabelAttribute : Label msg -> Attribute msg
+hiddenLabelAttribute : Label msg -> Attribute support msg
 hiddenLabelAttribute label =
     case label of
         HiddenLabel textLabel ->
@@ -331,7 +331,15 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
 
 -}
 button :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , pointer : ()
+            , onClick : ()
+            }
+            msg
+        )
     ->
         { onPress : Maybe msg
         , label : Element msg
@@ -359,7 +367,7 @@ button attrs { onPress, label } =
             :: Element.pointer
             :: focusDefault attrs
             :: Internal.Describe Internal.Button
-            :: Internal.Attr (Html.Attributes.tabindex 0)
+            :: tabindex 0
             :: (case onPress of
                     Nothing ->
                         Internal.Attr (Html.Attributes.disabled True) :: attrs
@@ -373,7 +381,7 @@ button attrs { onPress, label } =
         (Internal.Unkeyed [ label ])
 
 
-focusDefault : List (Attribute msg) -> Attribute msg
+focusDefault : List (Attribute support msg) -> Attribute support msg
 focusDefault attrs =
     if List.any hasFocusStyle attrs then
         Internal.NoAttribute
@@ -382,7 +390,7 @@ focusDefault attrs =
         Internal.htmlClass "focusable"
 
 
-hasFocusStyle : Attribute msg -> Bool
+hasFocusStyle : Attribute support msg -> Bool
 hasFocusStyle attr =
     case attr of
         Internal.StyleClass _ (Internal.PseudoSelector Internal.Focus _) ->
@@ -401,7 +409,17 @@ hasFocusStyle attr =
 
 -}
 checkbox :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , pointer : ()
+            , alignLeft : ()
+            , spacing : ()
+            , announce : ()
+            }
+            msg
+        )
     ->
         { onChange : Bool -> msg
         , icon : Bool -> Element msg
@@ -465,11 +483,41 @@ checkbox attrs { label, icon, checked, onChange } =
 
 {-| -}
 type Thumb
-    = Thumb (List (Attribute Never))
+    = Thumb
+        (List
+            (Attribute
+                { width : ()
+                , height : ()
+                , centerX : ()
+                , centerY : ()
+                , borderRounded : ()
+                , borderWidth : ()
+                , borderColor : ()
+                , backgroundColor : ()
+                , behindContent : ()
+                }
+                Never
+            )
+        )
 
 
 {-| -}
-thumb : List (Attribute Never) -> Thumb
+thumb :
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , centerX : ()
+            , centerY : ()
+            , borderRounded : ()
+            , borderWidth : ()
+            , borderColor : ()
+            , backgroundColor : ()
+            , behindContent : ()
+            }
+            Never
+        )
+    -> Thumb
 thumb =
     Thumb
 
@@ -532,7 +580,16 @@ The slider can be vertical or horizontal depending on the width/height of the sl
 
 -}
 slider :
-    List (Attribute msg)
+    List
+        (Attribute
+            { width : ()
+            , height : ()
+            , centerX : ()
+            , centerY : ()
+            , behindContent : ()
+            }
+            msg
+        )
     ->
         { onChange : Float -> msg
         , label : Label msg
@@ -751,8 +808,7 @@ slider attributes input =
             , Element.el
                 (Element.width
                     (Maybe.withDefault Element.fill trackWidth)
-                    :: Element.height
-                        (Maybe.withDefault (Element.px 20) trackHeight)
+                    :: Element.height (Maybe.withDefault (Element.px 20) trackHeight)
                     :: attributes
                     -- This is after `attributes` because the thumb should be in front of everything.
                     ++ [ Element.behindContent <|
@@ -768,7 +824,20 @@ slider attributes input =
         )
 
 
-viewHorizontalThumb : Float -> List Decoration -> Maybe Element.Length -> Element msg
+viewHorizontalThumb :
+    Float
+    ->
+        List
+            (Decoration
+                { width : ()
+                , height : ()
+                , centerX : ()
+                , centerY : ()
+                , behindContent : ()
+                }
+            )
+    -> Maybe Element.Length
+    -> Element msg
 viewHorizontalThumb factor thumbAttributes trackHeight =
     Element.row
         [ Element.width Element.fill
@@ -791,9 +860,9 @@ viewHorizontalThumb factor thumbAttributes trackHeight =
         ]
 
 
-viewVerticalThumb : Float -> List Decoration -> Maybe Element.Length -> Element msg
+viewVerticalThumb : Float -> List (Decoration support) -> Maybe Element.Length -> Element msg
 viewVerticalThumb factor thumbAttributes trackWidth =
-    Element.column
+    Element.col
         [ Element.height Element.fill
         , Element.width (Maybe.withDefault Element.fill trackWidth)
         , Element.centerX
@@ -848,7 +917,7 @@ zeroBox =
     Box 0 0 0 0
 
 
-getPadding : Attribute msg -> Maybe Box
+getPadding : Attribute support msg -> Maybe Box
 getPadding attr =
     case attr of
         Internal.StyleClass _ (Internal.PaddingStyle _ t r b l) ->
@@ -867,7 +936,7 @@ getPadding attr =
 
 
 {-| -}
-textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
+textHelper : TextInput -> List (Attribute support msg) -> Text msg -> Element msg
 textHelper textInput attrs textOptions =
     let
         withDefaults =
@@ -1046,7 +1115,7 @@ textHelper textInput attrs textOptions =
         wrappedInput
 
 
-getHeight : Attribute msg -> Maybe Internal.Length
+getHeight : Attribute support msg -> Maybe Internal.Length
 getHeight attr =
     case attr of
         Internal.Height h ->
@@ -1073,7 +1142,7 @@ renderBox { top, right, bottom, left } =
         ++ "px"
 
 
-renderPlaceholder : Placeholder msg -> List (Attribute msg) -> Bool -> Element msg
+renderPlaceholder : Placeholder msg -> List (Attribute support msg) -> Bool -> Element msg
 renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
     Element.el
         (forPlaceholder
@@ -1100,7 +1169,7 @@ renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on
 {-| Because textareas are now shadowed, where they're rendered twice,
 we to move the literal text area up because spacing is based on line height.
 -}
-calcMoveToCompensateForPadding : List (Attribute msg) -> Attribute msg
+calcMoveToCompensateForPadding : List (Attribute support msg) -> Attribute support msg
 calcMoveToCompensateForPadding attrs =
     let
         gatherSpacing attr found =
@@ -1124,12 +1193,12 @@ calcMoveToCompensateForPadding attrs =
             Element.moveUp (toFloat (floor (toFloat vSpace / 2)))
 
 
-type alias Redistribution msg =
-    { fullParent : List (Attribute msg)
-    , parent : List (Attribute msg)
-    , wrapper : List (Attribute msg)
-    , input : List (Attribute msg)
-    , cover : List (Attribute msg)
+type alias Redistribution support msg =
+    { fullParent : List (Attribute support msg)
+    , parent : List (Attribute support msg)
+    , wrapper : List (Attribute support msg)
+    , input : List (Attribute support msg)
+    , cover : List (Attribute support msg)
     }
 
 
@@ -1144,7 +1213,7 @@ redistribute them to the parent, the input, or the cover.
   - input -> actual input element
 
 -}
-redistribute : Bool -> Bool -> List (Attribute msg) -> Redistribution msg
+redistribute : Bool -> Bool -> List (Attribute support msg) -> Redistribution support msg
 redistribute isMultiline stacked attrs =
     List.foldl (redistributeOver isMultiline stacked)
         { fullParent = []
@@ -1223,7 +1292,7 @@ isPixel len =
 
 {-| isStacked means that the label is above or below
 -}
-redistributeOver : Bool -> Bool -> Attribute msg -> Redistribution msg -> Redistribution msg
+redistributeOver : Bool -> Bool -> Attribute support msg -> Redistribution support msg -> Redistribution support msg
 redistributeOver isMultiline stacked attr els =
     case attr of
         Internal.Nearby _ _ ->
@@ -1358,7 +1427,7 @@ redistributeOver isMultiline stacked attr els =
 
 {-| -}
 text :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1377,7 +1446,7 @@ text =
 {-| If spell checking is available, this input will be spellchecked.
 -}
 spellChecked :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1395,7 +1464,7 @@ spellChecked =
 
 {-| -}
 search :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1419,7 +1488,7 @@ A password takes all the arguments a normal `Input.text` would, and also **show*
 
 -}
 newPassword :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1450,7 +1519,7 @@ newPassword attrs pass =
 
 {-| -}
 currentPassword :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1481,7 +1550,7 @@ currentPassword attrs pass =
 
 {-| -}
 username :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1499,7 +1568,7 @@ username =
 
 {-| -}
 email :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1521,7 +1590,7 @@ By default it will have a minimum height of one line and resize based on it's co
 
 -}
 multiline :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -1555,7 +1624,7 @@ isHiddenLabel label =
             False
 
 
-applyLabel : List (Attribute msg) -> Label msg -> Element msg -> Element msg
+applyLabel : List (Attribute support msg) -> Label msg -> Element msg -> Element msg
 applyLabel attrs label input =
     case label of
         HiddenLabel _ ->
@@ -1634,7 +1703,7 @@ optionWith val view =
 
 {-| -}
 radio :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
@@ -1649,7 +1718,7 @@ radio =
 {-| Same as radio, but displayed as a row
 -}
 radioRow :
-    List (Attribute msg)
+    List (Attribute {} msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
@@ -1679,27 +1748,6 @@ defaultRadioOption optionLabel status =
 
                 _ ->
                     Internal.NoAttribute
-
-            -- , Border.shadow <|
-            --     -- case status of
-            --     --     Idle ->
-            --     --         { offset = ( 0, 0 )
-            --     --         , blur =
-            --     --             1
-            --     --         , color = Color.rgb 235 235 235
-            --     --         }
-            --     --     Focused ->
-            --     --         { offset = ( 0, 0 )
-            --     --         , blur =
-            --     --             0
-            --     --         , color = Color.rgba 235 235 235 0
-            --     --         }
-            --     --     Selected ->
-            --     { offset = ( 0, 0 )
-            --     , blur =
-            --         1
-            --     , color = Color.rgba 235 235 235 0
-            --     }
             , Border.width <|
                 case status of
                     Idle ->
@@ -1728,7 +1776,7 @@ defaultRadioOption optionLabel status =
 
 radioHelper :
     Orientation
-    -> List (Attribute msg)
+    -> List (Attribute support msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
@@ -1877,7 +1925,6 @@ radioHelper orientation attrs input =
                         )
             ]
             ++ events
-         -- ++ hideIfEverythingisInvisible
         )
         input.label
         optionArea
@@ -1894,7 +1941,7 @@ type Orientation
     | Column
 
 
-column : List (Attribute msg) -> List (Internal.Element msg) -> Internal.Element msg
+column : List (Attribute support msg) -> List (Internal.Element msg) -> Internal.Element msg
 column attributes children =
     Internal.element
         Internal.asColumn
@@ -1906,7 +1953,7 @@ column attributes children =
         (Internal.Unkeyed children)
 
 
-row : List (Attribute msg) -> List (Internal.Element msg) -> Internal.Element msg
+row : List (Attribute support msg) -> List (Internal.Element msg) -> Internal.Element msg
 row attributes children =
     Internal.element
         Internal.asRow
@@ -1922,7 +1969,7 @@ row attributes children =
 
 
 {-| -}
-onEnter : msg -> Attribute msg
+onEnter : msg -> Attribute support msg
 onEnter msg =
     onKey enter msg
 
@@ -1958,7 +2005,7 @@ space =
 
 
 {-| -}
-onKey : String -> msg -> Attribute msg
+onKey : String -> msg -> Attribute support msg
 onKey desiredCode msg =
     let
         decode code =
@@ -1998,7 +2045,7 @@ onKey desiredCode msg =
 
 
 {-| -}
-onKeyLookup : (String -> Maybe msg) -> Attribute msg
+onKeyLookup : (String -> Maybe msg) -> Attribute support msg
 onKeyLookup lookup =
     let
         decode code =
@@ -2016,27 +2063,27 @@ onKeyLookup lookup =
     Internal.Attr <| Html.Events.on "keyup" isKey
 
 
-value : String -> Attribute msg
+value : String -> Attribute support msg
 value =
     Internal.Attr << Html.Attributes.value
 
 
-tabindex : Int -> Attribute msg
+tabindex : Int -> Attribute support msg
 tabindex =
     Internal.Attr << Html.Attributes.tabindex
 
 
-disabled : Bool -> Attribute msg
+disabled : Bool -> Attribute support msg
 disabled =
     Internal.Attr << Html.Attributes.disabled
 
 
-spellcheck : Bool -> Attribute msg
+spellcheck : Bool -> Attribute support msg
 spellcheck =
     Internal.Attr << Html.Attributes.spellcheck
 
 
-autofill : String -> Attribute msg
+autofill : String -> Attribute support msg
 autofill =
     Internal.Attr << Html.Attributes.attribute "autocomplete"
 
@@ -2046,7 +2093,7 @@ autofill =
 You should only have a maximum of one per page.
 
 -}
-focusedOnLoad : Attribute msg
+focusedOnLoad : Attribute support msg
 focusedOnLoad =
     Internal.Attr <| Html.Attributes.autofocus True
 
@@ -2055,7 +2102,7 @@ focusedOnLoad =
 {- Style Defaults -}
 
 
-defaultTextBoxStyle : List (Attribute msg)
+defaultTextBoxStyle : List (Attribute support msg)
 defaultTextBoxStyle =
     [ defaultTextPadding
     , Border.rounded 3
@@ -2068,7 +2115,7 @@ defaultTextBoxStyle =
     ]
 
 
-defaultTextPadding : Attribute msg
+defaultTextPadding : Attribute support msg
 defaultTextPadding =
     Element.paddingXY 12 12
 

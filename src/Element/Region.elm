@@ -32,34 +32,25 @@ import Internal.Model as Internal exposing (Description(..))
 
 
 {-| -}
-mainContent : Attribute msg
+mainContent : Attribute { support | mainContent : () } msg
 mainContent =
     Internal.Describe Main
 
 
 {-| -}
-aside : Attribute msg
+aside : Attribute { support | aside : () } msg
 aside =
     Internal.Describe Complementary
 
 
 {-| -}
-navigation : Attribute msg
+navigation : Attribute { support | navigation : () } msg
 navigation =
     Internal.Describe Navigation
 
 
-
--- form : Attribute msg
--- form =
---     Internal.Describe Form
--- search : Attribute msg
--- search =
---     Internal.Describe Search
-
-
 {-| -}
-footer : Attribute msg
+footer : Attribute { support | footer : () } msg
 footer =
     Internal.Describe ContentInfo
 
@@ -82,26 +73,26 @@ will generate
     </a>
 
 -}
-heading : Int -> Attribute msg
+heading : Int -> Attribute { support | heading : () } msg
 heading =
     Internal.Describe << Heading
 
 
 {-| Screen readers will announce changes to this element and potentially interrupt any other announcement.
 -}
-announceUrgently : Attribute msg
+announceUrgently : Attribute { support | announceUrgently : () } msg
 announceUrgently =
     Internal.Describe LiveAssertive
 
 
 {-| Screen readers will announce when changes to this element are made.
 -}
-announce : Attribute msg
+announce : Attribute { support | announce : () } msg
 announce =
     Internal.Describe LivePolite
 
 
 {-| -}
-description : String -> Attribute msg
+description : String -> Attribute { support | description : () } msg
 description =
     Internal.Describe << Internal.Label

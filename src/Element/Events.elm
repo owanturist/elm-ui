@@ -34,45 +34,45 @@ import Json.Decode as Json
 
 
 {-| -}
-onMouseDown : msg -> Attribute msg
+onMouseDown : msg -> Attribute { support | onMouseDown : () } msg
 onMouseDown =
     Internal.Attr << Html.Events.onMouseDown
 
 
 {-| -}
-onMouseUp : msg -> Attribute msg
+onMouseUp : msg -> Attribute { support | onMouseUp : () } msg
 onMouseUp =
     Internal.Attr << Html.Events.onMouseUp
 
 
 {-| -}
-onClick : msg -> Attribute msg
+onClick : msg -> Attribute { support | onClick : () } msg
 onClick =
     Internal.Attr << Html.Events.onClick
 
 
 {-| -}
-onDoubleClick : msg -> Attribute msg
+onDoubleClick : msg -> Attribute { support | onDoubleClick : () } msg
 onDoubleClick =
     Internal.Attr << Html.Events.onDoubleClick
 
 
 {-| -}
-onMouseEnter : msg -> Attribute msg
+onMouseEnter : msg -> Attribute { support | onMouseEnter : () } msg
 onMouseEnter =
     Internal.Attr << Html.Events.onMouseEnter
 
 
 {-| -}
-onMouseLeave : msg -> Attribute msg
+onMouseLeave : msg -> Attribute { support | onMouseLeave : () } msg
 onMouseLeave =
     Internal.Attr << Html.Events.onMouseLeave
 
 
 {-| -}
-onMouseMove : msg -> Attribute msg
+onMouseMove : msg -> Attribute { support | onMouseMove : () } msg
 onMouseMove msg =
-    on "mousemove" (Json.succeed msg)
+    onHelp "mousemove" (Json.succeed msg)
 
 
 
@@ -80,19 +80,24 @@ onMouseMove msg =
 
 
 {-| -}
-onLoseFocus : msg -> Attribute msg
+onLoseFocus : msg -> Attribute { support | onLoseFocus : () } msg
 onLoseFocus =
     Internal.Attr << Html.Events.onBlur
 
 
 {-| -}
-onFocus : msg -> Attribute msg
+onFocus : msg -> Attribute { support | onFocus : () } msg
 onFocus =
     Internal.Attr << Html.Events.onFocus
 
 
 
 -- CUSTOM EVENTS
+
+
+onHelp : String -> Json.Decoder msg -> Attribute support msg
+onHelp event decode =
+    Internal.Attr <| Html.Events.on event decode
 
 
 {-| Create a custom event listener. Normally this will not be necessary, but
@@ -117,6 +122,6 @@ It really does help!
 [tutorial]: <https://github.com/evancz/elm-architecture-tutorial/>
 
 -}
-on : String -> Json.Decoder msg -> Attribute msg
-on event decode =
-    Internal.Attr <| Html.Events.on event decode
+on : String -> Json.Decoder msg -> Attribute { support | on : () } msg
+on =
+    onHelp

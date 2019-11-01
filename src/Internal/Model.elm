@@ -294,7 +294,7 @@ type alias Angle =
     Float
 
 
-type Attribute msg
+type Attribute support msg
     = NoAttribute
     | Attr (VirtualDom.Attribute msg)
     | Describe Description
@@ -393,7 +393,7 @@ foobar className =
     VirtualDom.property "className" (Encode.string className)
 
 
-htmlClass : String -> Attribute msg
+htmlClass : String -> Attribute support msg
 htmlClass =
     Attr << foobar
 
@@ -857,7 +857,7 @@ gatherAttrRecursive :
     -> List Style
     -> List (VirtualDom.Attribute msg)
     -> NearbyChildren msg
-    -> List (Attribute msg)
+    -> List (Attribute support msg)
     -> Gathered msg
 gatherAttrRecursive classes node has transform styles attrs children elementAttrs =
     case elementAttrs of
@@ -1517,7 +1517,7 @@ contextClasses context =
             pageClass
 
 
-element : LayoutContext -> NodeName -> List (Attribute msg) -> Children (Element msg) -> Element msg
+element : LayoutContext -> NodeName -> List (Attribute support msg) -> Children (Element msg) -> Element msg
 element context node attributes children =
     attributes
         |> List.reverse
@@ -1786,7 +1786,7 @@ staticRoot opts =
 This doesn't reduce equivalent attributes completely.
 
 -}
-filter : List (Attribute msg) -> List (Attribute msg)
+filter : List (Attribute support msg) -> List (Attribute support msg)
 filter attrs =
     Tuple.first <|
         List.foldr
@@ -1853,7 +1853,7 @@ filter attrs =
             attrs
 
 
-get : List (Attribute msg) -> (Attribute msg -> Bool) -> List (Attribute msg)
+get : List (Attribute support msg) -> (Attribute support msg -> Bool) -> List (Attribute support msg)
 get attrs isAttr =
     attrs
         |> filter
@@ -1876,7 +1876,7 @@ type Padding
     = Padding String Int Int Int Int
 
 
-extractSpacingAndPadding : List (Attribute msg) -> ( Maybe Padding, Maybe Spacing )
+extractSpacingAndPadding : List (Attribute support msg) -> ( Maybe Padding, Maybe Spacing )
 extractSpacingAndPadding attrs =
     List.foldr
         (\attr ( pad, spacing ) ->
@@ -1906,7 +1906,7 @@ extractSpacingAndPadding attrs =
         attrs
 
 
-getSpacing : List (Attribute msg) -> ( Int, Int ) -> ( Int, Int )
+getSpacing : List (Attribute support msg) -> ( Int, Int ) -> ( Int, Int )
 getSpacing attrs default =
     attrs
         |> List.foldr
@@ -1927,7 +1927,7 @@ getSpacing attrs default =
         |> Maybe.withDefault default
 
 
-getWidth : List (Attribute msg) -> Maybe Length
+getWidth : List (Attribute support msg) -> Maybe Length
 getWidth attrs =
     attrs
         |> List.foldr
@@ -1947,7 +1947,7 @@ getWidth attrs =
             Nothing
 
 
-getHeight : List (Attribute msg) -> Maybe Length
+getHeight : List (Attribute support msg) -> Maybe Length
 getHeight attrs =
     attrs
         |> List.foldr
@@ -2029,7 +2029,7 @@ toHtml mode el =
 
 
 {-| -}
-renderRoot : List Option -> List (Attribute msg) -> Element msg -> VirtualDom.Node msg
+renderRoot : List Option -> List (Attribute support msg) -> Element msg -> VirtualDom.Node msg
 renderRoot optionList attributes child =
     let
         options =
@@ -2088,7 +2088,7 @@ type alias Shadow =
     }
 
 
-rootStyle : List (Attribute msg)
+rootStyle : List (Attribute support msg)
 rootStyle =
     let
         families =
@@ -3243,7 +3243,7 @@ map fn el =
             Empty
 
 
-mapAttr : (msg -> msg1) -> Attribute msg -> Attribute msg1
+mapAttr : (msg -> msg1) -> Attribute support msg -> Attribute support msg1
 mapAttr fn attr =
     case attr of
         NoAttribute ->
@@ -3280,7 +3280,7 @@ mapAttr fn attr =
             TransformComponent fl trans
 
 
-mapAttrFromStyle : (msg -> msg1) -> Attribute msg -> Attribute msg1
+mapAttrFromStyle : (msg -> msg1) -> Attribute support msg -> Attribute support msg1
 mapAttrFromStyle fn attr =
     case attr of
         NoAttribute ->
@@ -3318,14 +3318,14 @@ mapAttrFromStyle fn attr =
             TransformComponent fl trans
 
 
-unwrapDecorations : List (Attribute Never) -> List Style
+unwrapDecorations : List (Attribute support msg) -> List Style
 unwrapDecorations attrs =
     case List.foldl unwrapDecsHelper ( [], Untransformed ) attrs of
         ( styles, transform ) ->
             Transform transform :: styles
 
 
-unwrapDecsHelper : Attribute msg -> ( List Style, Transformation ) -> ( List Style, Transformation )
+unwrapDecsHelper : Attribute support msg -> ( List Style, Transformation ) -> ( List Style, Transformation )
 unwrapDecsHelper attr ( styles, trans ) =
     case attr of
         StyleClass _ style ->
@@ -3357,7 +3357,7 @@ tag label style =
             x
 
 
-onlyStyles : Attribute msg -> Maybe Style
+onlyStyles : Attribute support msg -> Maybe Style
 onlyStyles attr =
     case attr of
         StyleClass _ style ->

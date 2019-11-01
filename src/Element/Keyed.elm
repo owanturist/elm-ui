@@ -26,7 +26,16 @@ import Internal.Style exposing (classes)
 
 
 {-| -}
-el : List (Attribute msg) -> ( String, Element msg ) -> Element msg
+el :
+    List
+        (Attribute
+            { height : ()
+            , width : ()
+            }
+            msg
+        )
+    -> ( String, Element msg )
+    -> Element msg
 el attrs child =
     Internal.element
         Internal.asEl
@@ -39,7 +48,16 @@ el attrs child =
 
 
 {-| -}
-row : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
+row :
+    List
+        (Attribute
+            { height : ()
+            , width : ()
+            }
+            msg
+        )
+    -> List ( String, Element msg )
+    -> Element msg
 row attrs children =
     Internal.element
         Internal.asRow
@@ -53,7 +71,16 @@ row attrs children =
 
 
 {-| -}
-column : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
+column :
+    List
+        (Attribute
+            { height : ()
+            , width : ()
+            }
+            msg
+        )
+    -> List ( String, Element msg )
+    -> Element msg
 column attrs children =
     Internal.element
         Internal.asColumn
