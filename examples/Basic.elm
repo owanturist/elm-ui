@@ -1,29 +1,22 @@
-module Main exposing (..)
+module Main exposing (main)
 
 {-| -}
 
-import Element exposing (..)
-import Element.Background as Background
-import Element.Font as Font
-import Element.Input
-import Element.Lazy
+import Element exposing (col, el, row, text)
 
 
 main =
-    Element.layout
-        [ Background.color (rgba 0 0 0 1)
-        , Font.color (rgba 1 1 1 1)
-        , Font.italic
-        , Font.size 32
-        , Font.family
-            [ Font.external
-                { url = "https://fonts.googleapis.com/css?family=EB+Garamond"
-                , name = "EB Garamond"
-                }
-            , Font.sansSerif
+    col
+        []
+        [ text "1"
+        , el [] (text "2")
+        , row
+            [ Element.padding 20 20 20 20
+            ]
+            [ text "3"
+            , text "4"
             ]
         ]
-    <|
-        el
-            [ centerX, centerY ]
-            (text "Hello stylish friend!")
+        |> Element.layout
+            [ Element.padding 20 20 20 20
+            ]
