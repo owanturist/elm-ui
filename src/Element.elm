@@ -4,21 +4,32 @@ module Element exposing
     , Common
     , Decoration
     , Element
+    , Font
     , Html
     , background
     , batch
+    , center
     , col
     , color
     , el
     , empty
+    , fontAlign
+    , fontFamily
     , fontSize
+    , justify
     , layout
+    , left
+    , monospace
     , none
     , padding
     , rgb
     , rgba
+    , right
     , row
+    , sansSerif
+    , serif
     , text
+    , typeface
     )
 
 import Internal.Color as Color
@@ -80,6 +91,8 @@ type alias Common support msg =
             , height : ()
             , padding : ()
             , align : ()
+            , fontFamily : ()
+            , fontAlign : ()
         }
         msg
 
@@ -212,12 +225,17 @@ left =
 
 right : Alignment { support | right : () }
 right =
-    Alignment Internal.Start
+    Alignment Internal.End
 
 
 center : Alignment { support | center : () }
 center =
     Alignment Internal.Middle
+
+
+justify : Alignment { support | justify : () }
+justify =
+    Alignment Internal.Justify
 
 
 align :
@@ -316,10 +334,52 @@ color clr =
 -- F O N T S
 
 
+type alias Font =
+    Internal.Font
+
+
 fontSize : Int -> Attribute { support | fontSize : () } msg
 fontSize size =
     size
         |> Internal.FontSize
+        |> Attribute
+
+
+typeface : String -> Font
+typeface =
+    Internal.TypeFace
+
+
+serif : Font
+serif =
+    Internal.Serif
+
+
+sansSerif : Font
+sansSerif =
+    Internal.SansSerif
+
+
+monospace : Font
+monospace =
+    Internal.Monospace
+
+
+fontFamily : List Font -> Attribute { support | fontFamily : () } msg
+fontFamily fonts =
+    if List.isEmpty fonts then
+        none
+
+    else
+        fonts
+            |> Internal.FontFamily
+            |> Attribute
+
+
+fontAlign : Alignment { left : (), right : (), center : (), justify : () } -> Attribute { support | fontAlign : () } msg
+fontAlign (Alignment alignment) =
+    alignment
+        |> Internal.FontAlign
         |> Attribute
 
 

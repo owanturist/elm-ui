@@ -1,5 +1,6 @@
 module Internal.Node exposing
     ( Alignment(..)
+    , Font(..)
     , Layout(..)
     , Length(..)
     , Node(..)
@@ -12,7 +13,7 @@ import Internal.Box as Box exposing (Box)
 import Internal.Color as Color exposing (Color)
 import Internal.Static as Static
 import Json.Encode as Encode
-import Maybe.Extra
+import Murmur3
 import VirtualDom
 
 
@@ -28,6 +29,13 @@ type Layout msg
     | Col (List (Node msg))
 
 
+type Font
+    = Serif
+    | SansSerif
+    | Monospace
+    | TypeFace String
+
+
 type Prop msg
     = Attribute (VirtualDom.Attribute msg)
     | Batch (List (Prop msg))
@@ -36,6 +44,9 @@ type Prop msg
       -- F O N T S
     | FontColor Color
     | FontSize Int
+    | FontFamily (List Font)
+    | FontAlign Alignment
+    | FontDecoration String
 
 
 type Length
@@ -50,6 +61,7 @@ type Alignment
     = Start
     | Middle
     | End
+    | Justify
 
 
 type alias Context =
@@ -59,6 +71,7 @@ type alias Context =
     -- F O N T S
     , fontColors : Dict String String
     , fontSizes : Dict String String
+    , fontFamilies : Dict String String
     }
 
 
@@ -66,8 +79,11 @@ initialContext : Context
 initialContext =
     { paddings = Dict.empty
     , backgrounds = Dict.empty
+
+    -- F O N T S
     , fontColors = Dict.empty
     , fontSizes = Dict.empty
+    , fontFamilies = Dict.empty
     }
 
 
@@ -79,6 +95,9 @@ type alias Config msg =
     -- F O N T S
     , fontColor : Maybe Color
     , fontSize : Maybe Int
+    , fontFamily : Maybe (List Font)
+    , fontAlign : Maybe Alignment
+    , fontDecoration : Maybe String
     }
 
 
@@ -91,7 +110,20 @@ initialConfig =
     -- F O N T S
     , fontColor = Nothing
     , fontSize = Nothing
+    , fontFamily = Nothing
+    , fontAlign = Nothing
+    , fontDecoration = Nothing
     }
+
+
+hash : String -> Int
+hash =
+    Murmur3.hashString 0
+
+
+isNothing : Maybe x -> Bool
+isNothing =
+    (==) Nothing
 
 
 applyPropToConfig : Prop msg -> Config msg -> Config msg
@@ -100,22 +132,59 @@ applyPropToConfig prop config =
         Attribute attr ->
             Debug.todo "Attribute"
 
+        Batch props ->
+            List.foldr applyPropToConfig config props
+
         Padding box ->
-            { config | padding = Maybe.Extra.or config.padding (Just box) }
+            if isNothing config.padding then
+                { config | padding = Just box }
+
+            else
+                config
 
         Background color ->
-            { config | background = Maybe.Extra.or config.background (Just color) }
+            if isNothing config.background then
+                { config | background = Just color }
+
+            else
+                config
 
         -- F O N T S
         --
         FontColor color ->
-            { config | fontColor = Maybe.Extra.or config.fontColor (Just color) }
+            if isNothing config.fontColor then
+                { config | fontColor = Just color }
+
+            else
+                config
 
         FontSize size ->
-            { config | fontSize = Maybe.Extra.or config.fontSize (Just size) }
+            if isNothing config.fontSize then
+                { config | fontSize = Just size }
 
-        Batch props ->
-            List.foldr applyPropToConfig config props
+            else
+                config
+
+        FontFamily family ->
+            if isNothing config.fontFamily then
+                { config | fontFamily = Just family }
+
+            else
+                config
+
+        FontAlign align ->
+            if isNothing config.fontAlign then
+                { config | fontAlign = Just align }
+
+            else
+                config
+
+        FontDecoration decoration ->
+            if isNothing config.fontDecoration then
+                { config | fontDecoration = Just decoration }
+
+            else
+                config
 
 
 type alias Acc msg =
@@ -169,6 +238,70 @@ applyFontSize size ( context, attributes ) =
     )
 
 
+applyFont : Font -> List String -> List String
+applyFont font names =
+    case font of
+        Serif ->
+            "serif" :: names
+
+        SansSerif ->
+            "sans-serif" :: names
+
+        Monospace ->
+            "monospace" :: names
+
+        TypeFace name ->
+            quotes name :: names
+
+
+applyFontFamily : List Font -> Acc msg -> Acc msg
+applyFontFamily family ( context, attributes ) =
+    let
+        names =
+            List.foldr applyFont [] family
+
+        className =
+            names
+                |> List.map String.toLower
+                |> String.concat
+                |> hash
+                |> String.fromInt
+                |> (++) "ff-"
+
+        css =
+            ("font-family:" ++ String.join "," names ++ ";")
+                ++ "font-variant:normal;"
+    in
+    ( { context | fontFamilies = Dict.insert className css context.fontFamilies }
+    , class className :: attributes
+    )
+
+
+applyFontAlign : Alignment -> Acc msg -> Acc msg
+applyFontAlign alignment ( context, attributes ) =
+    ( context
+    , case alignment of
+        Start ->
+            class "tl" :: attributes
+
+        Middle ->
+            class "tc" :: attributes
+
+        End ->
+            class "tr" :: attributes
+
+        Justify ->
+            class "tj" :: attributes
+    )
+
+
+applyFontDecoration : String -> Acc msg -> Acc msg
+applyFontDecoration decoration ( context, attributes ) =
+    ( context
+    , class ("fd-" ++ decoration) :: attributes
+    )
+
+
 applyPropsFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
 applyPropsFn fn acc =
     fn
@@ -186,6 +319,9 @@ applyProps props context =
     , Maybe.map applyBackground config.background
     , Maybe.map applyFontColor config.fontColor
     , Maybe.map applyFontSize config.fontSize
+    , Maybe.map applyFontFamily config.fontFamily
+    , Maybe.map applyFontAlign config.fontAlign
+    , Maybe.map applyFontDecoration config.fontDecoration
     ]
         |> List.foldr applyPropsFn ( context, config.attributes )
 
@@ -220,9 +356,7 @@ renderSingleElement context tag props node =
             renderHelp nextContext node
     in
     ( finalContext
-    , VirtualDom.node tag
-        (class "e" :: attributes)
-        [ child ]
+    , VirtualDom.node tag (class "e" :: attributes) [ child ]
     )
 
 
@@ -243,9 +377,7 @@ renderBatchElement className context tag props nodes =
                 nodes
     in
     ( finalContext
-    , VirtualDom.node tag
-        (class className :: attributes)
-        children
+    , VirtualDom.node tag (class className :: attributes) children
     )
 
 
@@ -280,14 +412,24 @@ px x =
     String.fromInt x ++ "px"
 
 
+wrap : String -> String -> String -> String
+wrap pre post x =
+    pre ++ x ++ post
+
+
+quotes : String -> String
+quotes =
+    wrap "\"" "\""
+
+
 curlyBraces : String -> String
-curlyBraces str =
-    "{" ++ str ++ "}"
+curlyBraces =
+    wrap "{" "}"
 
 
 renderSelectors : Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
-renderSelectors paddings nodes =
-    Dict.foldr (\id rules acc -> ( id, VirtualDom.text ("." ++ id ++ curlyBraces rules) ) :: acc) nodes paddings
+renderSelectors selectors nodes =
+    Dict.foldr (\id rules acc -> ( id, VirtualDom.text ("." ++ id ++ curlyBraces rules) ) :: acc) nodes selectors
 
 
 renderContext : Context -> VirtualDom.Node msg
@@ -297,6 +439,7 @@ renderContext context =
         |> renderSelectors context.backgrounds
         |> renderSelectors context.fontColors
         |> renderSelectors context.fontSizes
+        |> renderSelectors context.fontFamilies
         |> VirtualDom.keyedNode "style" []
 
 
@@ -313,6 +456,12 @@ render props node =
                 (Background (Color.Rgba 255 255 255 1)
                     :: FontColor (Color.Rgba 0 0 0 1)
                     :: FontSize 20
+                    :: FontFamily
+                        [ TypeFace "Open Sans"
+                        , TypeFace "Helvetica"
+                        , TypeFace "Verdana"
+                        , SansSerif
+                        ]
                     :: props
                 )
                 initialContext

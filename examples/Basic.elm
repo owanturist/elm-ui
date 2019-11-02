@@ -7,7 +7,8 @@ import Element exposing (col, el, row, text)
 
 main =
     col
-        []
+        [ Element.fontAlign Element.justify
+        ]
         [ text "1"
         , el
             []
@@ -18,5 +19,4 @@ main =
             , text "4"
             ]
         ]
-        |> Element.layout
-            []
+        |> Element.layout []
