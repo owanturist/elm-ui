@@ -47,6 +47,8 @@ type Prop msg
     | FontFamily (List Font)
     | FontAlign Alignment
     | FontDecoration String
+    | LetterSpacing Float
+    | WordSpacing Float
 
 
 type Length
@@ -72,6 +74,8 @@ type alias Context =
     , fontColors : Dict String String
     , fontSizes : Dict String String
     , fontFamilies : Dict String String
+    , letterSpacings : Dict String String
+    , wordSpacings : Dict String String
     }
 
 
@@ -84,6 +88,8 @@ initialContext =
     , fontColors = Dict.empty
     , fontSizes = Dict.empty
     , fontFamilies = Dict.empty
+    , letterSpacings = Dict.empty
+    , wordSpacings = Dict.empty
     }
 
 
@@ -98,6 +104,8 @@ type alias Config msg =
     , fontFamily : Maybe (List Font)
     , fontAlign : Maybe Alignment
     , fontDecoration : Maybe String
+    , letterSpacing : Maybe Float
+    , wordSpacing : Maybe Float
     }
 
 
@@ -113,6 +121,8 @@ initialConfig =
     , fontFamily = Nothing
     , fontAlign = Nothing
     , fontDecoration = Nothing
+    , letterSpacing = Nothing
+    , wordSpacing = Nothing
     }
 
 
@@ -182,6 +192,20 @@ applyPropToConfig prop config =
         FontDecoration decoration ->
             if isNothing config.fontDecoration then
                 { config | fontDecoration = Just decoration }
+
+            else
+                config
+
+        LetterSpacing spacing ->
+            if isNothing config.letterSpacing then
+                { config | letterSpacing = Just spacing }
+
+            else
+                config
+
+        WordSpacing spacing ->
+            if isNothing config.wordSpacing then
+                { config | wordSpacing = Just spacing }
 
             else
                 config
@@ -302,6 +326,40 @@ applyFontDecoration decoration ( context, attributes ) =
     )
 
 
+applyLetterSpacing : Float -> Acc msg -> Acc msg
+applyLetterSpacing spacing ( context, attributes ) =
+    let
+        spacing_ =
+            String.fromFloat spacing
+
+        className =
+            "ls-" ++ String.replace "." "_" spacing_
+
+        css =
+            "letter-spacing:" ++ spacing_ ++ "px;"
+    in
+    ( { context | letterSpacings = Dict.insert className css context.letterSpacings }
+    , class className :: attributes
+    )
+
+
+applyWordSpacing : Float -> Acc msg -> Acc msg
+applyWordSpacing spacing ( context, attributes ) =
+    let
+        spacing_ =
+            String.fromFloat spacing
+
+        className =
+            "ws-" ++ String.replace "." "_" spacing_
+
+        css =
+            "word-spacing:" ++ spacing_ ++ "px;"
+    in
+    ( { context | wordSpacings = Dict.insert className css context.wordSpacings }
+    , class className :: attributes
+    )
+
+
 applyPropsFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
 applyPropsFn fn acc =
     fn
@@ -322,6 +380,8 @@ applyProps props context =
     , Maybe.map applyFontFamily config.fontFamily
     , Maybe.map applyFontAlign config.fontAlign
     , Maybe.map applyFontDecoration config.fontDecoration
+    , Maybe.map applyLetterSpacing config.letterSpacing
+    , Maybe.map applyWordSpacing config.wordSpacing
     ]
         |> List.foldr applyPropsFn ( context, config.attributes )
 
@@ -440,6 +500,8 @@ renderContext context =
         |> renderSelectors context.fontColors
         |> renderSelectors context.fontSizes
         |> renderSelectors context.fontFamilies
+        |> renderSelectors context.letterSpacings
+        |> renderSelectors context.wordSpacings
         |> VirtualDom.keyedNode "style" []
 
 

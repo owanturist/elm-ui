@@ -19,6 +19,7 @@ module Element exposing
     , justify
     , layout
     , left
+    , letterSpacing
     , monospace
     , none
     , padding
@@ -30,6 +31,7 @@ module Element exposing
     , serif
     , text
     , typeface
+    , wordSpacing
     )
 
 import Internal.Color as Color
@@ -93,6 +95,8 @@ type alias Common support msg =
             , align : ()
             , fontFamily : ()
             , fontAlign : ()
+            , letterSpacing : ()
+            , wordSpacing : ()
         }
         msg
 
@@ -380,6 +384,20 @@ fontAlign : Alignment { left : (), right : (), center : (), justify : () } -> At
 fontAlign (Alignment alignment) =
     alignment
         |> Internal.FontAlign
+        |> Attribute
+
+
+letterSpacing : Float -> Attribute { support | letterSpacing : () } msg
+letterSpacing offset =
+    offset
+        |> Internal.LetterSpacing
+        |> Attribute
+
+
+wordSpacing : Float -> Attribute { support | wordSpacing : () } msg
+wordSpacing offset =
+    offset
+        |> Internal.WordSpacing
         |> Attribute
 
 

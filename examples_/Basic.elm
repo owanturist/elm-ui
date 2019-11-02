@@ -16,9 +16,10 @@ main =
             []
             (text "2")
         , row
-            []
-            [ text "3"
-            , text "4"
+            [ Font.wordSpacing 50.5
+            ]
+            [ text "34"
+            , text " 56 78"
             ]
         ]
         |> Element.layout
