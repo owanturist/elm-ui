@@ -79,9 +79,7 @@ input[type=range]::-ms-thumb {
 
 input[type=range][orient=vertical] {
     writing-mode: bt-lr;
-    /* IE */
     -webkit-appearance: slider-vertical;
-    /* WebKit */
 }
 
 .explain {
@@ -122,10 +120,7 @@ body {
     z-index: 0;
 }
 
-.ui.s.hf {
-    height: 100%;
-}
-
+.ui.s.hf,
 .ui.s.hf>.hf {
     height: 100%;
 }
@@ -172,10 +167,7 @@ body {
     flex-grow: 100000;
 }
 
-.nb.e>.wf {
-    width: 100%;
-}
-
+.nb.e>.wf,
 .nb.e>.wfp {
     width: 100%;
 }
@@ -254,10 +246,6 @@ body {
     width: 100%;
 }
 
-.nb.a>* {
-    pointer-events: auto;
-}
-
 .nb.b {
     position: absolute;
     bottom: 0;
@@ -267,10 +255,6 @@ body {
     z-index: 20;
     margin: 0 !important;
     pointer-events: none;
-}
-
-.nb.b>* {
-    pointer-events: auto;
 }
 
 .nb.b>.hf {
@@ -287,10 +271,6 @@ body {
     pointer-events: none;
 }
 
-.nb.or>* {
-    pointer-events: auto;
-}
-
 .nb.ol {
     position: absolute;
     right: 100%;
@@ -301,10 +281,6 @@ body {
     pointer-events: none;
 }
 
-.nb.ol>* {
-    pointer-events: auto;
-}
-
 .nb.fr {
     position: absolute;
     width: 100%;
@@ -313,10 +289,6 @@ body {
     top: 0;
     margin: 0 !important;
     pointer-events: none;
-}
-
-.nb.fr>* {
-    pointer-events: auto;
 }
 
 .nb.bh {
@@ -330,6 +302,11 @@ body {
     pointer-events: none;
 }
 
+.nb.a>*,
+.nb.b>*,
+.nb.or>*,
+.nb.ol>*,
+.nb.fr>*,
 .nb.bh>* {
     pointer-events: auto;
 }
@@ -384,40 +361,27 @@ body {
     pointer-events: auto !important;
 }
 
-.s.clr {
-    opacity: 0;
-}
-
-.s.oq {
-    opacity: 1;
-}
-
-.s.hvclr:hover {
-    opacity: 0;
-}
-
-.s.hvoq:hover {
-    opacity: 1;
-}
-
-.s.fcsclr:focus {
-    opacity: 0;
-}
-
-.s.fcsoq:focus {
-    opacity: 1;
-}
-
+.s.clr,
+.s.hvclr:hover,
+.s.fcsclr:focus,
 .s.atvclr:active {
     opacity: 0;
 }
 
+.s.oq,
+.s.hvoq:hover,
+.s.fcsoq:focus,
 .s.atvoq:active {
     opacity: 1;
 }
 
 .s.ts {
-    transition: transform 160ms, opacity 160ms, filter 160ms, background-color 160ms, color 160ms, font-size 160ms;
+    transition: transform 160ms,
+                opacity 160ms,
+                filter 160ms,
+                background-color 160ms,
+                color 160ms,
+                font-size 160ms;
 }
 
 .s.sb {
@@ -437,10 +401,7 @@ body {
     overflow-y: auto;
 }
 
-.s.sby.c {
-    flex-shrink: 1;
-}
-
+.s.sby.c,
 .s.sby.e {
     flex-shrink: 1;
 }
@@ -928,58 +889,29 @@ body {
     z-index: -1;
 }
 
-.s.p>.t {
-    display: inline;
-    white-space: normal;
-}
-
+.s.p>.t,
 .s.p>.e {
     display: inline;
     white-space: normal;
 }
 
-.s.p>.e.fr {
-    display: flex;
-}
-
-.s.p>.e.bh {
-    display: flex;
-}
-
-.s.p>.e.a {
-    display: flex;
-}
-
-.s.p>.e.b {
-    display: flex;
-}
-
-.s.p>.e.or {
-    display: flex;
-}
-
+.s.p>.e.fr,
+.s.p>.e.bh,
+.s.p>.e.a,
+.s.p>.e.b,
+.s.p>.e.or,
 .s.p>.e.ol {
     display: flex;
 }
 
-.s.p>.e>.t {
-    display: inline;
-    white-space: normal;
-}
-
+.s.p>.e>.t,
 .s.p>.e>.e>.t {
     display: inline;
     white-space: normal;
 }
 
-.s.p>.r {
-    display: inline-flex;
-}
-
-.s.p>.c {
-    display: inline-flex;
-}
-
+.s.p>.r,
+.s.p>.c,
 .s.p>.g {
     display: inline-grid;
 }

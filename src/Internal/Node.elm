@@ -356,7 +356,7 @@ renderSingleElement context tag props node =
             renderHelp nextContext node
     in
     ( finalContext
-    , VirtualDom.node tag (class "e" :: attributes) [ child ]
+    , VirtualDom.node tag (class "s e" :: attributes) [ child ]
     )
 
 
@@ -388,10 +388,10 @@ renderElement context tag props layout =
             renderSingleElement context tag props node
 
         Row nodes ->
-            renderBatchElement "r" context tag props nodes
+            renderBatchElement "s r" context tag props nodes
 
         Col nodes ->
-            renderBatchElement "c" context tag props nodes
+            renderBatchElement "s c" context tag props nodes
 
 
 renderHelp : Context -> Node msg -> ( Context, VirtualDom.Node msg )
