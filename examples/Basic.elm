@@ -6,18 +6,23 @@ import Element exposing (col, el, row, text)
 
 
 main =
-    col
-        [ Element.fontAlign Element.justify
+    row
+        [ Element.background (Element.rgb 100 100 200)
+        , Element.width Element.fill
+        , Element.height Element.fill
         ]
-        [ text "1"
+        [ el
+            [ Element.width (Element.portion 1)
+            ]
+            (text "1")
         , el
-            []
+            [ Element.width (Element.portion 2)
+            , Element.background (Element.rgb 200 200 100)
+            ]
             (text "2")
-        , row
-            [ Element.wordSpacing 50.5
+        , el
+            [ Element.width (Element.portion 1)
             ]
-            [ text "34"
-            , text " 56 78"
-            ]
+            (text "3")
         ]
         |> Element.layout []

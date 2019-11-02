@@ -8,19 +8,25 @@ import Element.Font as Font
 
 
 main =
-    column
-        [ Font.justify
+    row
+        [ Background.color (Element.rgb255 100 100 200)
+        , Element.width Element.fill
+        , Element.height Element.fill
         ]
-        [ text "1"
+        [ el
+            [ Element.width (Element.fillPortion 1)
+            , Element.height (Element.fillPortion 2)
+            ]
+            (text "1")
         , el
-            []
+            [ Element.width (Element.fillPortion 1)
+            , Element.height (Element.fillPortion 2)
+            ]
             (text "2")
-        , row
-            [ Font.wordSpacing 50.5
+        , el
+            [ Element.width (Element.fillPortion 2)
+            , Element.height (Element.fillPortion 1)
             ]
-            [ text "34"
-            , text " 56 78"
-            ]
+            (text "3")
         ]
-        |> Element.layout
-            []
+        |> Element.layout []

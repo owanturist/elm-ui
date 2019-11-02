@@ -39,7 +39,11 @@ type Font
 type Prop msg
     = Attribute (VirtualDom.Attribute msg)
     | Batch (List (Prop msg))
+      -- G E O M E T R Y
     | Padding (Box Int)
+    | Width Length
+    | Height Length
+      -- B A C K G R O U N D
     | Background Color
       -- F O N T S
     | FontColor Color
@@ -68,6 +72,8 @@ type Alignment
 
 type alias Context =
     { paddings : Dict String String
+    , widths : Dict String String
+    , heights : Dict String String
     , backgrounds : Dict String String
 
     -- F O N T S
@@ -76,12 +82,17 @@ type alias Context =
     , fontFamilies : Dict String String
     , letterSpacings : Dict String String
     , wordSpacings : Dict String String
+
+    -- L A Y O U T
+    , fromSingle : Bool
     }
 
 
 initialContext : Context
 initialContext =
     { paddings = Dict.empty
+    , widths = Dict.empty
+    , heights = Dict.empty
     , backgrounds = Dict.empty
 
     -- F O N T S
@@ -90,12 +101,21 @@ initialContext =
     , fontFamilies = Dict.empty
     , letterSpacings = Dict.empty
     , wordSpacings = Dict.empty
+
+    -- L A Y O U T
+    , fromSingle = True
     }
 
 
 type alias Config msg =
     { attributes : List (VirtualDom.Attribute msg)
+
+    -- G E O M E T R Y
     , padding : Maybe (Box Int)
+    , width : Maybe Length
+    , height : Maybe Length
+
+    -- B A C K G R O U N D
     , background : Maybe Color
 
     -- F O N T S
@@ -112,7 +132,13 @@ type alias Config msg =
 initialConfig : Config msg
 initialConfig =
     { attributes = []
+
+    -- G E O M E T R Y
     , padding = Nothing
+    , width = Nothing
+    , height = Nothing
+
+    -- B A C K G R O U N D
     , background = Nothing
 
     -- F O N T S
@@ -145,6 +171,7 @@ applyPropToConfig prop config =
         Batch props ->
             List.foldr applyPropToConfig config props
 
+        -- G E O M E T R Y
         Padding box ->
             if isNothing config.padding then
                 { config | padding = Just box }
@@ -152,6 +179,21 @@ applyPropToConfig prop config =
             else
                 config
 
+        Width width ->
+            if isNothing config.width then
+                { config | width = Just width }
+
+            else
+                config
+
+        Height height ->
+            if isNothing config.height then
+                { config | height = Just height }
+
+            else
+                config
+
+        -- B A C K G R O U N D
         Background color ->
             if isNothing config.background then
                 { config | background = Just color }
@@ -224,6 +266,64 @@ applyPadding padding ( context, attributes ) =
     ( { context | paddings = Dict.insert className (Box.toCss "padding" px padding) context.paddings }
     , class className :: attributes
     )
+
+
+applyWidth : Length -> Acc msg -> Acc msg
+applyWidth length ( context, attributes ) =
+    case length of
+        Shrink ->
+            ( context
+            , class "wc" :: attributes
+            )
+
+        Portion 1 ->
+            ( context
+            , class "wf" :: attributes
+            )
+
+        Portion n ->
+            let
+                className =
+                    "wp-" ++ String.fromInt n
+
+                css =
+                    "flex-grow:" ++ String.fromInt n ++ "00000;"
+            in
+            ( { context | widths = Dict.insert className css context.widths }
+            , class ("wfp " ++ className) :: attributes
+            )
+
+        _ ->
+            ( context, attributes )
+
+
+applyHeight : Length -> Acc msg -> Acc msg
+applyHeight length ( context, attributes ) =
+    case length of
+        Shrink ->
+            ( context
+            , class "hc" :: attributes
+            )
+
+        Portion 1 ->
+            ( context
+            , class "hf" :: attributes
+            )
+
+        Portion n ->
+            let
+                className =
+                    "hp-" ++ String.fromInt n
+
+                css =
+                    "flex-grow:" ++ String.fromInt n ++ "00000;"
+            in
+            ( { context | heights = Dict.insert className css context.heights }
+            , class ("hfp " ++ className) :: attributes
+            )
+
+        _ ->
+            ( context, attributes )
 
 
 applyBackground : Color -> Acc msg -> Acc msg
@@ -374,6 +474,8 @@ applyProps props context =
             List.foldr applyPropToConfig initialConfig props
     in
     [ Maybe.map applyPadding config.padding
+    , Maybe.map applyWidth config.width
+    , Maybe.map applyHeight config.height
     , Maybe.map applyBackground config.background
     , Maybe.map applyFontColor config.fontColor
     , Maybe.map applyFontSize config.fontSize
@@ -403,17 +505,26 @@ renderEmpty context =
 
 renderText : Context -> String -> ( Context, VirtualDom.Node msg )
 renderText context txt =
-    ( context, VirtualDom.text txt )
+    ( context
+    , VirtualDom.node "div"
+        [ if context.fromSingle then
+            class "s t wf hf"
+
+          else
+            class "s t wc hc"
+        ]
+        [ VirtualDom.text txt ]
+    )
 
 
 renderSingleElement : Context -> String -> List (Prop msg) -> Node msg -> ( Context, VirtualDom.Node msg )
 renderSingleElement context tag props node =
     let
         ( nextContext, attributes ) =
-            applyProps props context
+            applyProps (Width Shrink :: Height Shrink :: props) context
 
         ( finalContext, child ) =
-            renderHelp nextContext node
+            renderHelp { nextContext | fromSingle = True } node
     in
     ( finalContext
     , VirtualDom.node tag (class "s e" :: attributes) [ child ]
@@ -424,14 +535,14 @@ renderBatchElement : String -> Context -> String -> List (Prop msg) -> List (Nod
 renderBatchElement className context tag props nodes =
     let
         ( nextContext, attributes ) =
-            applyProps props context
+            applyProps (Width Shrink :: Height Shrink :: props) context
 
         ( finalContext, children ) =
             List.foldr
                 (\node ( contextAcc, childrenAcc ) ->
                     Tuple.mapSecond
                         (\child -> child :: childrenAcc)
-                        (renderHelp contextAcc node)
+                        (renderHelp { contextAcc | fromSingle = False } node)
                 )
                 ( nextContext, [] )
                 nodes
@@ -487,21 +598,26 @@ curlyBraces =
     wrap "{" "}"
 
 
-renderSelectors : Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
-renderSelectors selectors nodes =
-    Dict.foldr (\id rules acc -> ( id, VirtualDom.text ("." ++ id ++ curlyBraces rules) ) :: acc) nodes selectors
+renderSelectors : (String -> String) -> Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
+renderSelectors mod selectors nodes =
+    Dict.foldr
+        (\id rules acc -> ( id, VirtualDom.text (mod ("." ++ id ++ curlyBraces rules)) ) :: acc)
+        nodes
+        selectors
 
 
 renderContext : Context -> VirtualDom.Node msg
 renderContext context =
     []
-        |> renderSelectors context.paddings
-        |> renderSelectors context.backgrounds
-        |> renderSelectors context.fontColors
-        |> renderSelectors context.fontSizes
-        |> renderSelectors context.fontFamilies
-        |> renderSelectors context.letterSpacings
-        |> renderSelectors context.wordSpacings
+        |> renderSelectors identity context.paddings
+        |> renderSelectors ((++) ".r>") context.widths
+        |> renderSelectors ((++) ".c>") context.heights
+        |> renderSelectors identity context.backgrounds
+        |> renderSelectors identity context.fontColors
+        |> renderSelectors identity context.fontSizes
+        |> renderSelectors identity context.fontFamilies
+        |> renderSelectors identity context.letterSpacings
+        |> renderSelectors identity context.wordSpacings
         |> VirtualDom.keyedNode "style" []
 
 

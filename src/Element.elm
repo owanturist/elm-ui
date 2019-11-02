@@ -13,9 +13,11 @@ module Element exposing
     , color
     , el
     , empty
+    , fill
     , fontAlign
     , fontFamily
     , fontSize
+    , height
     , justify
     , layout
     , left
@@ -23,14 +25,17 @@ module Element exposing
     , monospace
     , none
     , padding
+    , portion
     , rgb
     , rgba
     , right
     , row
     , sansSerif
     , serif
+    , shrink
     , text
     , typeface
+    , width
     , wordSpacing
     )
 
@@ -176,12 +181,16 @@ maximum =
 
 width : Length -> Attribute { support | width : () } msg
 width length =
-    Debug.todo "width"
+    length
+        |> Internal.Width
+        |> Attribute
 
 
 height : Length -> Attribute { support | height : () } msg
 height length =
-    Debug.todo "height"
+    length
+        |> Internal.Height
+        |> Attribute
 
 
 
