@@ -120,11 +120,6 @@ body {
     height: auto;
     min-height: 100%;
     z-index: 0;
-    color: #000;
-    background-color: #fff;
-    font-size: 20px;
-    font-family: "Open Sans", "Helvetica", "Verdana", sans-serif;
-    font-variant: normal;
 }
 
 .ui.s.hf {

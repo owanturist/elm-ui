@@ -13,6 +13,7 @@ import Internal.Box as Box exposing (Box)
 import Internal.Color as Color exposing (Color)
 import Internal.Static as Static
 import Json.Encode as Encode
+import Maybe.Extra
 import VirtualDom
 
 
@@ -36,7 +37,7 @@ type Prop msg
 
 
 type Style
-    = Paddings (Box Int)
+    = Padding (Box Int)
     | Background Color
     | Color Color
 
@@ -72,57 +73,36 @@ initialContext =
 
 type alias Config msg =
     { attributes : List (VirtualDom.Attribute msg)
+    , padding : Maybe (Box Int)
+    , background : Maybe Color
+    , color : Maybe Color
     }
 
 
 initialConfig : Config msg
 initialConfig =
     { attributes = []
+    , padding = Nothing
+    , background = Nothing
+    , color = Nothing
     }
 
 
-applyStyle : Style -> ( Context, Config msg ) -> ( Context, Config msg )
-applyStyle style ( context, config ) =
+applyStyleToConfig : Style -> Config msg -> Config msg
+applyStyleToConfig style config =
     case style of
-        Paddings box ->
-            let
-                className =
-                    Box.toClass "p" Box.int box
-
-                css =
-                    Box.toCss "padding" Box.px box
-            in
-            ( { context | paddings = Dict.insert className css context.paddings }
-            , { config | attributes = class className :: config.attributes }
-            )
+        Padding box ->
+            { config | padding = Maybe.Extra.or config.padding (Just box) }
 
         Background color ->
-            let
-                className =
-                    Color.toClass "bg" color
-
-                css =
-                    Color.toCss "background-color" color
-            in
-            ( { context | backgrounds = Dict.insert className css context.backgrounds }
-            , { config | attributes = class className :: config.attributes }
-            )
+            { config | background = Maybe.Extra.or config.background (Just color) }
 
         Color color ->
-            let
-                className =
-                    Color.toClass "c" color
-
-                css =
-                    Color.toCss "color" color
-            in
-            ( { context | colors = Dict.insert className css context.colors }
-            , { config | attributes = class className :: config.attributes }
-            )
+            { config | color = Maybe.Extra.or config.color (Just color) }
 
 
-applyPropToContext : Prop msg -> ( Context, Config msg ) -> ( Context, Config msg )
-applyPropToContext prop cc =
+applyPropToConfig : Prop msg -> Config msg -> Config msg
+applyPropToConfig prop config =
     case prop of
         Attribute attr ->
             Debug.todo "Attribute"
@@ -131,15 +111,67 @@ applyPropToContext prop cc =
             Debug.todo "Selector"
 
         Styles style ->
-            applyStyle style cc
+            applyStyleToConfig style config
 
-        Batch many ->
-            List.foldr applyPropToContext cc many
+        Batch props ->
+            List.foldr applyPropToConfig config props
 
 
-applyPropsToContext : List (Prop msg) -> Context -> ( Context, Config msg )
-applyPropsToContext props context =
-    List.foldr applyPropToContext ( context, initialConfig ) props
+type alias Acc msg =
+    ( Context, List (VirtualDom.Attribute msg) )
+
+
+applyConfigPadding : Box Int -> Acc msg -> Acc msg
+applyConfigPadding padding ( context, attributes ) =
+    let
+        className =
+            Box.toClass "p" Box.int padding
+    in
+    ( { context | paddings = Dict.insert className (Box.toCss "padding" Box.px padding) context.paddings }
+    , class className :: attributes
+    )
+
+
+applyConfigBackground : Color -> Acc msg -> Acc msg
+applyConfigBackground background ( context, attributes ) =
+    let
+        className =
+            Color.toClass "bg" background
+    in
+    ( { context | backgrounds = Dict.insert className (Color.toCss "background-color" background) context.backgrounds }
+    , class className :: attributes
+    )
+
+
+applyConfigColor : Color -> Acc msg -> Acc msg
+applyConfigColor color ( context, attributes ) =
+    let
+        className =
+            Color.toClass "c" color
+    in
+    ( { context | colors = Dict.insert className (Color.toCss "color" color) context.colors }
+    , class className :: attributes
+    )
+
+
+applyPropsFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
+applyPropsFn fn acc =
+    fn
+        |> Maybe.map ((|>) acc)
+        |> Maybe.withDefault acc
+
+
+applyProps : List (Prop msg) -> Context -> Acc msg
+applyProps props context =
+    let
+        config =
+            List.foldr applyPropToConfig initialConfig props
+    in
+    [ Maybe.map applyConfigPadding config.padding
+    , Maybe.map applyConfigBackground config.background
+    , Maybe.map applyConfigColor config.color
+    ]
+        |> List.foldr applyPropsFn ( context, config.attributes )
 
 
 class : String -> VirtualDom.Attribute msg
@@ -165,15 +197,15 @@ renderText context txt =
 renderSingleElement : Context -> String -> List (Prop msg) -> Node msg -> ( Context, VirtualDom.Node msg )
 renderSingleElement context tag props node =
     let
-        ( nextContext, config ) =
-            applyPropsToContext props context
+        ( nextContext, attributes ) =
+            applyProps props context
 
         ( finalContext, child ) =
             renderHelp nextContext node
     in
     ( finalContext
     , VirtualDom.node tag
-        (class "e" :: config.attributes)
+        (class "e" :: attributes)
         [ child ]
     )
 
@@ -181,8 +213,8 @@ renderSingleElement context tag props node =
 renderBatchElement : String -> Context -> String -> List (Prop msg) -> List (Node msg) -> ( Context, VirtualDom.Node msg )
 renderBatchElement className context tag props nodes =
     let
-        ( nextContext, config ) =
-            applyPropsToContext props context
+        ( nextContext, attributes ) =
+            applyProps props context
 
         ( finalContext, children ) =
             List.foldr
@@ -196,7 +228,7 @@ renderBatchElement className context tag props nodes =
     in
     ( finalContext
     , VirtualDom.node tag
-        (class className :: config.attributes)
+        (class className :: attributes)
         children
     )
 
@@ -254,14 +286,19 @@ staticCss =
 render : List (Prop msg) -> Node msg -> VirtualDom.Node msg
 render props node =
     let
-        ( rootContext, config ) =
-            applyPropsToContext props initialContext
+        ( context, attributes ) =
+            applyProps
+                (Styles (Background (Color.Rgba 255 255 255 1))
+                    :: Styles (Color (Color.Rgba 0 0 0 1))
+                    :: props
+                )
+                initialContext
 
         ( finalContext, vnode ) =
-            renderHelp rootContext node
+            renderHelp context node
     in
     VirtualDom.node "div"
-        (class "ui" :: config.attributes)
+        (class "ui s e" :: attributes)
         [ VirtualDom.lazy (always staticCss) ()
         , renderContext finalContext
         , vnode

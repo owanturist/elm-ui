@@ -176,7 +176,7 @@ padding t r b l =
     , bottom = b
     , left = l
     }
-        |> Internal.Paddings
+        |> Internal.Padding
         |> Internal.Styles
         |> Attribute
 
