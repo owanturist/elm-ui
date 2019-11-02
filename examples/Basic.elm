@@ -12,7 +12,8 @@ main =
         , Element.height Element.fill
         ]
         [ el
-            [ Element.width (Element.portion 1)
+            [ Element.width (Element.px 100)
+            , Element.background (Element.rgb 100 200 100)
             ]
             (text "1")
         , el
@@ -22,6 +23,7 @@ main =
             (text "2")
         , el
             [ Element.width (Element.portion 1)
+            , Element.background (Element.rgb 100 200 200)
             ]
             (text "3")
         ]

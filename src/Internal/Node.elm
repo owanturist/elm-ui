@@ -263,7 +263,7 @@ applyPadding padding ( context, attributes ) =
         className =
             Box.toClass "p" String.fromInt padding
     in
-    ( { context | paddings = Dict.insert className (Box.toCss "padding" px padding) context.paddings }
+    ( { context | paddings = Dict.insert ("." ++ className) (Box.toCss "padding" px padding) context.paddings }
     , class className :: attributes
     )
 
@@ -289,8 +289,20 @@ applyWidth length ( context, attributes ) =
                 css =
                     "flex-grow:" ++ String.fromInt n ++ "00000;"
             in
-            ( { context | widths = Dict.insert className css context.widths }
+            ( { context | widths = Dict.insert (".r>." ++ className) css context.widths }
             , class ("wfp " ++ className) :: attributes
+            )
+
+        Px x ->
+            let
+                className =
+                    "wpx-" ++ String.fromInt x
+
+                css =
+                    "width:" ++ px x ++ ";"
+            in
+            ( { context | widths = Dict.insert ("." ++ className) css context.widths }
+            , class ("we " ++ className) :: attributes
             )
 
         _ ->
@@ -318,8 +330,20 @@ applyHeight length ( context, attributes ) =
                 css =
                     "flex-grow:" ++ String.fromInt n ++ "00000;"
             in
-            ( { context | heights = Dict.insert className css context.heights }
+            ( { context | heights = Dict.insert (".c>." ++ className) css context.heights }
             , class ("hfp " ++ className) :: attributes
+            )
+
+        Px x ->
+            let
+                className =
+                    "hpx-" ++ String.fromInt x
+
+                css =
+                    "height:" ++ px x ++ ";"
+            in
+            ( { context | heights = Dict.insert ("." ++ className) css context.heights }
+            , class ("he " ++ className) :: attributes
             )
 
         _ ->
@@ -332,7 +356,7 @@ applyBackground background ( context, attributes ) =
         className =
             Color.toClass "bg" background
     in
-    ( { context | backgrounds = Dict.insert className (Color.toCss "background-color" background) context.backgrounds }
+    ( { context | backgrounds = Dict.insert ("." ++ className) (Color.toCss "background-color" background) context.backgrounds }
     , class className :: attributes
     )
 
@@ -343,7 +367,7 @@ applyFontColor color ( context, attributes ) =
         className =
             Color.toClass "fc" color
     in
-    ( { context | fontColors = Dict.insert className (Color.toCss "color" color) context.fontColors }
+    ( { context | fontColors = Dict.insert ("." ++ className) (Color.toCss "color" color) context.fontColors }
     , class className :: attributes
     )
 
@@ -357,7 +381,7 @@ applyFontSize size ( context, attributes ) =
         css =
             "font-size:" ++ px size ++ ";"
     in
-    ( { context | fontSizes = Dict.insert className css context.fontSizes }
+    ( { context | fontSizes = Dict.insert ("." ++ className) css context.fontSizes }
     , class className :: attributes
     )
 
@@ -393,10 +417,9 @@ applyFontFamily family ( context, attributes ) =
                 |> (++) "ff-"
 
         css =
-            ("font-family:" ++ String.join "," names ++ ";")
-                ++ "font-variant:normal;"
+            "font-family:" ++ String.join "," names ++ ";font-variant:normal;"
     in
-    ( { context | fontFamilies = Dict.insert className css context.fontFamilies }
+    ( { context | fontFamilies = Dict.insert ("." ++ className) css context.fontFamilies }
     , class className :: attributes
     )
 
@@ -438,7 +461,7 @@ applyLetterSpacing spacing ( context, attributes ) =
         css =
             "letter-spacing:" ++ spacing_ ++ "px;"
     in
-    ( { context | letterSpacings = Dict.insert className css context.letterSpacings }
+    ( { context | letterSpacings = Dict.insert ("." ++ className) css context.letterSpacings }
     , class className :: attributes
     )
 
@@ -455,7 +478,7 @@ applyWordSpacing spacing ( context, attributes ) =
         css =
             "word-spacing:" ++ spacing_ ++ "px;"
     in
-    ( { context | wordSpacings = Dict.insert className css context.wordSpacings }
+    ( { context | wordSpacings = Dict.insert ("." ++ className) css context.wordSpacings }
     , class className :: attributes
     )
 
@@ -598,10 +621,10 @@ curlyBraces =
     wrap "{" "}"
 
 
-renderSelectors : (String -> String) -> Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
-renderSelectors mod selectors nodes =
+renderSelectors : Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
+renderSelectors selectors nodes =
     Dict.foldr
-        (\id rules acc -> ( id, VirtualDom.text (mod ("." ++ id ++ curlyBraces rules)) ) :: acc)
+        (\selector rules acc -> ( selector, VirtualDom.text (selector ++ curlyBraces rules) ) :: acc)
         nodes
         selectors
 
@@ -609,15 +632,15 @@ renderSelectors mod selectors nodes =
 renderContext : Context -> VirtualDom.Node msg
 renderContext context =
     []
-        |> renderSelectors identity context.paddings
-        |> renderSelectors ((++) ".r>") context.widths
-        |> renderSelectors ((++) ".c>") context.heights
-        |> renderSelectors identity context.backgrounds
-        |> renderSelectors identity context.fontColors
-        |> renderSelectors identity context.fontSizes
-        |> renderSelectors identity context.fontFamilies
-        |> renderSelectors identity context.letterSpacings
-        |> renderSelectors identity context.wordSpacings
+        |> renderSelectors context.paddings
+        |> renderSelectors context.widths
+        |> renderSelectors context.heights
+        |> renderSelectors context.backgrounds
+        |> renderSelectors context.fontColors
+        |> renderSelectors context.fontSizes
+        |> renderSelectors context.fontFamilies
+        |> renderSelectors context.letterSpacings
+        |> renderSelectors context.wordSpacings
         |> VirtualDom.keyedNode "style" []
 
 

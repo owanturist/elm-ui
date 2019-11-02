@@ -14,18 +14,18 @@ main =
         , Element.height Element.fill
         ]
         [ el
-            [ Element.width (Element.fillPortion 1)
-            , Element.height (Element.fillPortion 2)
+            [ Element.width (Element.maximum 100 Element.fill)
+            , Background.color (Element.rgb255 100 200 100)
             ]
             (text "1")
         , el
-            [ Element.width (Element.fillPortion 1)
-            , Element.height (Element.fillPortion 2)
+            [ Element.width (Element.fillPortion 2)
+            , Background.color (Element.rgb255 200 200 100)
             ]
             (text "2")
         , el
-            [ Element.width (Element.fillPortion 2)
-            , Element.height (Element.fillPortion 1)
+            [ Element.width (Element.fillPortion 1)
+            , Background.color (Element.rgb255 100 200 200)
             ]
             (text "3")
         ]

@@ -26,6 +26,7 @@ module Element exposing
     , none
     , padding
     , portion
+    , px
     , rgb
     , rgba
     , right
