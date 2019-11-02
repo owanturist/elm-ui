@@ -39,7 +39,9 @@ type Prop msg
 type Style
     = Padding (Box Int)
     | Background Color
-    | Color Color
+      -- F O N T S
+    | FontColor Color
+    | FontSize Int
 
 
 type Length
@@ -59,7 +61,10 @@ type Alignment
 type alias Context =
     { paddings : Dict String String
     , backgrounds : Dict String String
-    , colors : Dict String String
+
+    -- F O N T S
+    , fontColors : Dict String String
+    , fontSizes : Dict String String
     }
 
 
@@ -67,7 +72,8 @@ initialContext : Context
 initialContext =
     { paddings = Dict.empty
     , backgrounds = Dict.empty
-    , colors = Dict.empty
+    , fontColors = Dict.empty
+    , fontSizes = Dict.empty
     }
 
 
@@ -75,7 +81,10 @@ type alias Config msg =
     { attributes : List (VirtualDom.Attribute msg)
     , padding : Maybe (Box Int)
     , background : Maybe Color
-    , color : Maybe Color
+
+    -- F O N T S
+    , fontColor : Maybe Color
+    , fontSize : Maybe Int
     }
 
 
@@ -84,7 +93,10 @@ initialConfig =
     { attributes = []
     , padding = Nothing
     , background = Nothing
-    , color = Nothing
+
+    -- F O N T S
+    , fontColor = Nothing
+    , fontSize = Nothing
     }
 
 
@@ -97,8 +109,13 @@ applyStyleToConfig style config =
         Background color ->
             { config | background = Maybe.Extra.or config.background (Just color) }
 
-        Color color ->
-            { config | color = Maybe.Extra.or config.color (Just color) }
+        -- F O N T S
+        --
+        FontColor color ->
+            { config | fontColor = Maybe.Extra.or config.fontColor (Just color) }
+
+        FontSize size ->
+            { config | fontSize = Maybe.Extra.or config.fontSize (Just size) }
 
 
 applyPropToConfig : Prop msg -> Config msg -> Config msg
@@ -121,19 +138,19 @@ type alias Acc msg =
     ( Context, List (VirtualDom.Attribute msg) )
 
 
-applyConfigPadding : Box Int -> Acc msg -> Acc msg
-applyConfigPadding padding ( context, attributes ) =
+applyPadding : Box Int -> Acc msg -> Acc msg
+applyPadding padding ( context, attributes ) =
     let
         className =
-            Box.toClass "p" Box.int padding
+            Box.toClass "p" String.fromInt padding
     in
-    ( { context | paddings = Dict.insert className (Box.toCss "padding" Box.px padding) context.paddings }
+    ( { context | paddings = Dict.insert className (Box.toCss "padding" px padding) context.paddings }
     , class className :: attributes
     )
 
 
-applyConfigBackground : Color -> Acc msg -> Acc msg
-applyConfigBackground background ( context, attributes ) =
+applyBackground : Color -> Acc msg -> Acc msg
+applyBackground background ( context, attributes ) =
     let
         className =
             Color.toClass "bg" background
@@ -143,13 +160,27 @@ applyConfigBackground background ( context, attributes ) =
     )
 
 
-applyConfigColor : Color -> Acc msg -> Acc msg
-applyConfigColor color ( context, attributes ) =
+applyFontColor : Color -> Acc msg -> Acc msg
+applyFontColor color ( context, attributes ) =
     let
         className =
-            Color.toClass "c" color
+            Color.toClass "fc" color
     in
-    ( { context | colors = Dict.insert className (Color.toCss "color" color) context.colors }
+    ( { context | fontColors = Dict.insert className (Color.toCss "color" color) context.fontColors }
+    , class className :: attributes
+    )
+
+
+applyFontSize : Int -> Acc msg -> Acc msg
+applyFontSize size ( context, attributes ) =
+    let
+        className =
+            "fs-" ++ String.fromInt size
+
+        css =
+            "font-size:" ++ px size ++ ";"
+    in
+    ( { context | fontSizes = Dict.insert className css context.fontSizes }
     , class className :: attributes
     )
 
@@ -167,9 +198,10 @@ applyProps props context =
         config =
             List.foldr applyPropToConfig initialConfig props
     in
-    [ Maybe.map applyConfigPadding config.padding
-    , Maybe.map applyConfigBackground config.background
-    , Maybe.map applyConfigColor config.color
+    [ Maybe.map applyPadding config.padding
+    , Maybe.map applyBackground config.background
+    , Maybe.map applyFontColor config.fontColor
+    , Maybe.map applyFontSize config.fontSize
     ]
         |> List.foldr applyPropsFn ( context, config.attributes )
 
@@ -259,6 +291,11 @@ renderHelp context node =
             renderElement context tag props layout
 
 
+px : Int -> String
+px x =
+    String.fromInt x ++ "px"
+
+
 curlyBraces : String -> String
 curlyBraces str =
     "{" ++ str ++ "}"
@@ -274,7 +311,8 @@ renderContext context =
     []
         |> renderSelectors context.paddings
         |> renderSelectors context.backgrounds
-        |> renderSelectors context.colors
+        |> renderSelectors context.fontColors
+        |> renderSelectors context.fontSizes
         |> VirtualDom.keyedNode "style" []
 
 
@@ -289,7 +327,8 @@ render props node =
         ( context, attributes ) =
             applyProps
                 (Styles (Background (Color.Rgba 255 255 255 1))
-                    :: Styles (Color (Color.Rgba 0 0 0 1))
+                    :: Styles (FontColor (Color.Rgba 0 0 0 1))
+                    :: Styles (FontSize 20)
                     :: props
                 )
                 initialContext

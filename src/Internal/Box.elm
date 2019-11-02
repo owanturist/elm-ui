@@ -1,4 +1,4 @@
-module Internal.Box exposing (Box, float, int, map, px, toClass, toCss)
+module Internal.Box exposing (Box, map, toClass, toCss)
 
 
 type alias Box x =
@@ -37,18 +37,3 @@ toClass prefix stringifier box =
 toCss : String -> (x -> String) -> Box x -> String
 toCss rule stringifier box =
     String.concat (rule :: ":" :: List.map ((++) " " << stringifier) (unify box)) ++ ";"
-
-
-int : Int -> String
-int =
-    String.fromInt
-
-
-float : Float -> String
-float =
-    String.fromFloat
-
-
-px : Int -> String
-px x =
-    String.fromInt x ++ "px"

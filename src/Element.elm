@@ -11,6 +11,7 @@ module Element exposing
     , color
     , el
     , empty
+    , fontSize
     , layout
     , none
     , padding
@@ -93,6 +94,7 @@ type alias Decoration support msg =
             , scale : ()
             , background : ()
             , color : ()
+            , fontSize : ()
         }
         msg
 
@@ -308,7 +310,19 @@ background clr =
 color : Color -> Attribute { support | color : () } msg
 color clr =
     clr
-        |> Internal.Color
+        |> Internal.FontColor
+        |> Internal.Styles
+        |> Attribute
+
+
+
+-- F O N T S
+
+
+fontSize : Int -> Attribute { support | fontSize : () } msg
+fontSize size =
+    size
+        |> Internal.FontSize
         |> Internal.Styles
         |> Attribute
 
