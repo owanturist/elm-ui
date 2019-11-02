@@ -20,7 +20,4 @@ main =
             ]
         ]
         |> Element.layout
-            [ Element.padding 20
-            , Element.padding 30
-            , Background.color (Element.rgb255 100 100 200)
-            ]
+            []

@@ -179,7 +179,6 @@ padding t r b l =
     , left = l
     }
         |> Internal.Padding
-        |> Internal.Styles
         |> Attribute
 
 
@@ -303,7 +302,6 @@ background : Color -> Attribute { support | background : () } msg
 background clr =
     clr
         |> Internal.Background
-        |> Internal.Styles
         |> Attribute
 
 
@@ -311,7 +309,6 @@ color : Color -> Attribute { support | color : () } msg
 color clr =
     clr
         |> Internal.FontColor
-        |> Internal.Styles
         |> Attribute
 
 
@@ -323,7 +320,6 @@ fontSize : Int -> Attribute { support | fontSize : () } msg
 fontSize size =
     size
         |> Internal.FontSize
-        |> Internal.Styles
         |> Attribute
 
 

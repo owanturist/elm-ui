@@ -4,7 +4,6 @@ module Internal.Node exposing
     , Length(..)
     , Node(..)
     , Prop(..)
-    , Style(..)
     , render
     )
 
@@ -31,13 +30,8 @@ type Layout msg
 
 type Prop msg
     = Attribute (VirtualDom.Attribute msg)
-    | Selector String
-    | Styles Style
     | Batch (List (Prop msg))
-
-
-type Style
-    = Padding (Box Int)
+    | Padding (Box Int)
     | Background Color
       -- F O N T S
     | FontColor Color
@@ -100,9 +94,12 @@ initialConfig =
     }
 
 
-applyStyleToConfig : Style -> Config msg -> Config msg
-applyStyleToConfig style config =
-    case style of
+applyPropToConfig : Prop msg -> Config msg -> Config msg
+applyPropToConfig prop config =
+    case prop of
+        Attribute attr ->
+            Debug.todo "Attribute"
+
         Padding box ->
             { config | padding = Maybe.Extra.or config.padding (Just box) }
 
@@ -116,19 +113,6 @@ applyStyleToConfig style config =
 
         FontSize size ->
             { config | fontSize = Maybe.Extra.or config.fontSize (Just size) }
-
-
-applyPropToConfig : Prop msg -> Config msg -> Config msg
-applyPropToConfig prop config =
-    case prop of
-        Attribute attr ->
-            Debug.todo "Attribute"
-
-        Selector selector ->
-            Debug.todo "Selector"
-
-        Styles style ->
-            applyStyleToConfig style config
 
         Batch props ->
             List.foldr applyPropToConfig config props
@@ -326,9 +310,9 @@ render props node =
     let
         ( context, attributes ) =
             applyProps
-                (Styles (Background (Color.Rgba 255 255 255 1))
-                    :: Styles (FontColor (Color.Rgba 0 0 0 1))
-                    :: Styles (FontSize 20)
+                (Background (Color.Rgba 255 255 255 1)
+                    :: FontColor (Color.Rgba 0 0 0 1)
+                    :: FontSize 20
                     :: props
                 )
                 initialContext
