@@ -1,7 +1,17 @@
-module Internal.Node exposing (Alignment(..), Layout(..), Length(..), Node(..), Prop(..), Style(..), render)
+module Internal.Node exposing
+    ( Alignment(..)
+    , Layout(..)
+    , Length(..)
+    , Node(..)
+    , Prop(..)
+    , Style(..)
+    , render
+    )
 
 import Dict exposing (Dict)
 import Internal.Box as Box exposing (Box)
+import Internal.Color as Color exposing (Color)
+import Internal.Static as Static
 import Json.Encode as Encode
 import VirtualDom
 
@@ -27,6 +37,8 @@ type Prop msg
 
 type Style
     = Paddings (Box Int)
+    | Background Color
+    | Color Color
 
 
 type Length
@@ -45,12 +57,16 @@ type Alignment
 
 type alias Context =
     { paddings : Dict String String
+    , backgrounds : Dict String String
+    , colors : Dict String String
     }
 
 
 initialContext : Context
 initialContext =
     { paddings = Dict.empty
+    , backgrounds = Dict.empty
+    , colors = Dict.empty
     }
 
 
@@ -77,6 +93,30 @@ applyStyle style ( context, config ) =
                     Box.toCss "padding" Box.px box
             in
             ( { context | paddings = Dict.insert className css context.paddings }
+            , { config | attributes = class className :: config.attributes }
+            )
+
+        Background color ->
+            let
+                className =
+                    Color.toClass "bg" color
+
+                css =
+                    Color.toCss "background-color" color
+            in
+            ( { context | backgrounds = Dict.insert className css context.backgrounds }
+            , { config | attributes = class className :: config.attributes }
+            )
+
+        Color color ->
+            let
+                className =
+                    Color.toClass "c" color
+
+                css =
+                    Color.toCss "color" color
+            in
+            ( { context | colors = Dict.insert className css context.colors }
             , { config | attributes = class className :: config.attributes }
             )
 
@@ -192,17 +232,23 @@ curlyBraces str =
     "{" ++ str ++ "}"
 
 
-renderPaddings : Dict String String -> String
-renderPaddings paddings =
-    Dict.foldr (\id rules acc -> "." ++ id ++ curlyBraces rules ++ acc) "" paddings
+renderSelectors : Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
+renderSelectors paddings nodes =
+    Dict.foldr (\id rules acc -> ( id, VirtualDom.text ("." ++ id ++ curlyBraces rules) ) :: acc) nodes paddings
 
 
 renderContext : Context -> VirtualDom.Node msg
 renderContext context =
-    VirtualDom.node "style"
-        []
-        [ VirtualDom.text (renderPaddings context.paddings)
-        ]
+    []
+        |> renderSelectors context.paddings
+        |> renderSelectors context.backgrounds
+        |> renderSelectors context.colors
+        |> VirtualDom.keyedNode "style" []
+
+
+staticCss : VirtualDom.Node msg
+staticCss =
+    VirtualDom.node "style" [] [ VirtualDom.text Static.css ]
 
 
 render : List (Prop msg) -> Node msg -> VirtualDom.Node msg
@@ -216,6 +262,7 @@ render props node =
     in
     VirtualDom.node "div"
         (class "ui" :: config.attributes)
-        [ renderContext finalContext
+        [ VirtualDom.lazy (always staticCss) ()
+        , renderContext finalContext
         , vnode
         ]

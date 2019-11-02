@@ -1,15 +1,26 @@
 module Element exposing
-    ( Element
+    ( Attribute
+    , Color
+    , Common
+    , Decoration
+    , Element
+    , Html
+    , background
+    , batch
     , col
+    , color
     , el
     , empty
     , layout
+    , none
     , padding
+    , rgb
+    , rgba
     , row
     , text
     )
 
-import Internal.Box as Box
+import Internal.Color as Color
 import Internal.Node as Internal
 import VirtualDom
 
@@ -80,6 +91,8 @@ type alias Decoration support msg =
             , move : ()
             , rotate : ()
             , scale : ()
+            , background : ()
+            , color : ()
         }
         msg
 
@@ -264,6 +277,40 @@ clip =
 scrollbars : Attribute { support | scrollbars : () } msg
 scrollbars =
     Debug.todo "scrollbars"
+
+
+
+-- C O L O R
+
+
+type alias Color =
+    Color.Color
+
+
+rgb : Int -> Int -> Int -> Color
+rgb r g b =
+    Color.Rgba r g b 1
+
+
+rgba : Int -> Int -> Int -> Int -> Color
+rgba =
+    Color.Rgba
+
+
+background : Color -> Attribute { support | background : () } msg
+background clr =
+    clr
+        |> Internal.Background
+        |> Internal.Styles
+        |> Attribute
+
+
+color : Color -> Attribute { support | color : () } msg
+color clr =
+    clr
+        |> Internal.Color
+        |> Internal.Styles
+        |> Attribute
 
 
 

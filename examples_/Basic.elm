@@ -2,11 +2,11 @@ module Main exposing (main)
 
 {-| -}
 
-import Element exposing (col, el, row, text)
+import Element exposing (column, el, row, text)
 
 
 main =
-    col
+    column
         []
         [ text "1"
         , el
@@ -19,6 +19,6 @@ main =
             ]
         ]
         |> Element.layout
-            [ Element.padding 20 20 20 20
-            , Element.padding 30 30 30 30
+            [ Element.padding 20
+            , Element.padding 30
             ]
