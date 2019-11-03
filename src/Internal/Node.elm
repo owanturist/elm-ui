@@ -133,8 +133,8 @@ type alias Config msg =
     }
 
 
-initialConfig : Config msg
-initialConfig =
+emptyConfig : Config msg
+emptyConfig =
     { attributes = []
 
     -- G E O M E T R Y
@@ -158,14 +158,27 @@ initialConfig =
     }
 
 
+initialUiConfig : Config msg
+initialUiConfig =
+    { emptyConfig
+        | background = Just (Color.Rgba 255 255 255 1)
+        , fontColor = Just (Color.Rgba 0 0 0 1)
+        , fontSize = Just 20
+        , fontFamily = Just [ TypeFace "Open Sans", TypeFace "Helvetica", TypeFace "Verdana", SansSerif ]
+    }
+
+
+initialElementConfig : Config msg
+initialElementConfig =
+    { emptyConfig
+        | width = Just Shrink
+        , height = Just Shrink
+    }
+
+
 hash : String -> Int
 hash =
     Murmur3.hashString 0
-
-
-isNothing : Maybe x -> Bool
-isNothing =
-    (==) Nothing
 
 
 applyPropToConfig : Prop msg -> Config msg -> Config msg
@@ -179,98 +192,51 @@ applyPropToConfig prop config =
 
         -- G E O M E T R Y
         Padding box ->
-            if isNothing config.padding then
-                { config | padding = Just box }
-
-            else
-                config
+            { config | padding = Just box }
 
         Width width ->
-            if isNothing config.width then
-                { config | width = Just width }
-
-            else
-                config
+            { config | width = Just width }
 
         Height height ->
-            if isNothing config.height then
-                { config | height = Just height }
-
-            else
-                config
+            { config | height = Just height }
 
         AlignX alignment ->
-            if isNothing config.alignX then
-                { config | alignX = Just alignment }
-
-            else
-                config
+            { config | alignX = Just alignment }
 
         AlignY alignment ->
-            if isNothing config.alignY then
-                { config | alignY = Just alignment }
-
-            else
-                config
+            { config | alignY = Just alignment }
 
         -- B A C K G R O U N D
         Background color ->
-            if isNothing config.background then
-                { config | background = Just color }
-
-            else
-                config
+            { config | background = Just color }
 
         -- F O N T S
         --
         FontColor color ->
-            if isNothing config.fontColor then
-                { config | fontColor = Just color }
-
-            else
-                config
+            { config | fontColor = Just color }
 
         FontSize size ->
-            if isNothing config.fontSize then
-                { config | fontSize = Just size }
-
-            else
-                config
+            { config | fontSize = Just size }
 
         FontFamily family ->
-            if isNothing config.fontFamily then
-                { config | fontFamily = Just family }
-
-            else
-                config
+            { config | fontFamily = Just family }
 
         FontAlign align ->
-            if isNothing config.fontAlign then
-                { config | fontAlign = Just align }
-
-            else
-                config
+            { config | fontAlign = Just align }
 
         FontDecoration decoration ->
-            if isNothing config.fontDecoration then
-                { config | fontDecoration = Just decoration }
-
-            else
-                config
+            { config | fontDecoration = Just decoration }
 
         LetterSpacing spacing ->
-            if isNothing config.letterSpacing then
-                { config | letterSpacing = Just spacing }
-
-            else
-                config
+            { config | letterSpacing = Just spacing }
 
         WordSpacing spacing ->
-            if isNothing config.wordSpacing then
-                { config | wordSpacing = Just spacing }
+            { config | wordSpacing = Just spacing }
 
-            else
-                config
+
+applyPropsToConfig : List (Prop msg) -> Config msg -> Config msg
+applyPropsToConfig props config =
+    List.foldr applyPropToConfig config props
 
 
 type alias Acc msg =
@@ -585,19 +551,15 @@ applyWordSpacing spacing ( context, attributes ) =
     )
 
 
-applyPropsFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
-applyPropsFn fn acc =
+applyConfigToContextFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
+applyConfigToContextFn fn acc =
     fn
         |> Maybe.map ((|>) acc)
         |> Maybe.withDefault acc
 
 
-applyProps : List (Prop msg) -> Context -> Acc msg
-applyProps props context =
-    let
-        config =
-            List.foldr applyPropToConfig initialConfig props
-    in
+applyConfigToContext : Config msg -> Context -> Acc msg
+applyConfigToContext config context =
     [ Maybe.map applyPadding config.padding
     , Maybe.map applyWidth config.width
     , Maybe.map applyHeight config.height
@@ -612,7 +574,7 @@ applyProps props context =
     , Maybe.map applyLetterSpacing config.letterSpacing
     , Maybe.map applyWordSpacing config.wordSpacing
     ]
-        |> List.foldr applyPropsFn ( context, config.attributes )
+        |> List.foldr applyConfigToContextFn ( context, config.attributes )
 
 
 class : String -> VirtualDom.Attribute msg
@@ -630,8 +592,8 @@ renderEmpty context =
     ( context, empty )
 
 
-renderText : Context -> String -> ( Context, VirtualDom.Node msg )
-renderText context txt =
+renderText : String -> Context -> ( Context, VirtualDom.Node msg )
+renderText txt context =
     ( context
     , VirtualDom.node "div"
         [ if context.parent == Single then
@@ -651,17 +613,20 @@ layoutToClassName layout =
             "s e"
 
         Row ->
-            "s r"
+            "s r cl ccy"
 
         Col ->
-            "s c"
+            "s c cl ct"
 
 
-renderBatchElement : Context -> Layout -> List (Prop msg) -> List (Node msg) -> ( Context, VirtualDom.Node msg )
-renderBatchElement context layout props nodes =
+renderElement : Layout -> List (Prop msg) -> List (Node msg) -> Context -> ( Context, VirtualDom.Node msg )
+renderElement layout props nodes context =
     let
+        config =
+            applyPropsToConfig props initialElementConfig
+
         ( nextContext, attributes ) =
-            applyProps (Width Shrink :: Height Shrink :: props) context
+            applyConfigToContext config context
 
         ( finalContext, children ) =
             List.foldr
@@ -672,6 +637,9 @@ renderBatchElement context layout props nodes =
                 )
                 ( nextContext, [] )
                 nodes
+
+        vnode =
+            VirtualDom.node "div" (class (layoutToClassName layout) :: attributes) children
     in
     ( finalContext
     , VirtualDom.node "div" (class (layoutToClassName layout) :: attributes) children
@@ -685,10 +653,10 @@ renderHelp context node =
             renderEmpty context
 
         Text txt ->
-            renderText context txt
+            renderText txt context
 
         Element layout props nodes ->
-            renderBatchElement context layout props nodes
+            renderElement layout props nodes context
 
 
 px : Int -> String
@@ -742,20 +710,11 @@ staticCss =
 render : List (Prop msg) -> Node msg -> VirtualDom.Node msg
 render props node =
     let
+        config =
+            applyPropsToConfig props initialUiConfig
+
         ( context, attributes ) =
-            applyProps
-                (Background (Color.Rgba 255 255 255 1)
-                    :: FontColor (Color.Rgba 0 0 0 1)
-                    :: FontSize 20
-                    :: FontFamily
-                        [ TypeFace "Open Sans"
-                        , TypeFace "Helvetica"
-                        , TypeFace "Verdana"
-                        , SansSerif
-                        ]
-                    :: props
-                )
-                initialContext
+            applyConfigToContext config initialContext
 
         ( finalContext, vnode ) =
             renderHelp context node

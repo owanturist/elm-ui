@@ -24,7 +24,8 @@ alignSingleInRow =
 
             -- , Element.alignLeft -- non wrap
             -- , Element.alignTop -- non wrap
-            -- , Element.centerX -- wrap s.s.e.ctr.ccy.accx
+            , Element.centerX -- wrap s.s.e.ctr.ccy.accx
+
             -- , Element.centerY -- non wrap
             -- , Element.alignBottom -- non wrap
             -- , Element.alignRight -- wrap u.s.e.ctr.ccy.acr
