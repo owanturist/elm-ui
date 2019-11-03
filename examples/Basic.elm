@@ -96,4 +96,6 @@ spacing node =
             , Element.height Element.fill
             , Element.spacing 0
             , Element.background (Element.rgb 100 100 100)
+            , Element.alpha 0.5
+            , Element.wordSpacing 0.5
             ]

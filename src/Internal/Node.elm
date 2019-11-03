@@ -46,8 +46,9 @@ type Prop msg
     | Height Length
     | AlignX Alignment
     | AlignY Alignment
-      -- B A C K G R O U N D
+      -- D R E S S
     | Background Color
+    | Opacity Float
       -- F O N T S
     | FontColor Color
     | FontSize Int
@@ -78,7 +79,10 @@ type alias Context =
     , paddings : Dict String String
     , widths : Dict String String
     , heights : Dict String String
+
+    -- D R E S S
     , backgrounds : Dict String String
+    , opacities : Dict String String
 
     -- F O N T S
     , fontColors : Dict String String
@@ -95,7 +99,10 @@ initialContext =
     , paddings = Dict.empty
     , widths = Dict.empty
     , heights = Dict.empty
+
+    -- D R E S S
     , backgrounds = Dict.empty
+    , opacities = Dict.empty
 
     -- F O N T S
     , fontColors = Dict.empty
@@ -117,8 +124,9 @@ type alias Config msg =
     , alignX : Maybe Alignment
     , alignY : Maybe Alignment
 
-    -- B A C K G R O U N D
+    -- D R E S S
     , background : Maybe Color
+    , opacity : Float
 
     -- F O N T S
     , fontColor : Maybe Color
@@ -143,8 +151,9 @@ emptyConfig =
     , alignX = Nothing
     , alignY = Nothing
 
-    -- B A C K G R O U N D
+    -- D R E S S
     , background = Nothing
+    , opacity = 1
 
     -- F O N T S
     , fontColor = Nothing
@@ -208,9 +217,13 @@ applyPropToConfig prop config =
         AlignY alignment ->
             { config | alignY = Just alignment }
 
-        -- B A C K G R O U N D
+        -- D R E S S
         Background color ->
             { config | background = Just color }
+
+        -- D R E S S
+        Opacity x ->
+            { config | opacity = x }
 
         -- F O N T S
         --
@@ -465,10 +478,31 @@ applyBackground background ( context, attributes ) =
     let
         className =
             Color.toClass "bg" background
+
+        css =
+            Color.toCss "background-color" background
     in
-    ( { context | backgrounds = Dict.insert ("." ++ className) (Color.toCss "background-color" background) context.backgrounds }
+    ( { context | backgrounds = Dict.insert ("." ++ className) css context.backgrounds }
     , class className :: attributes
     )
+
+
+applyOpacity : Float -> Acc msg -> Acc msg
+applyOpacity opacity ( context, attributes ) =
+    if opacity == 1 then
+        ( context, attributes )
+
+    else
+        let
+            className =
+                "o-" ++ String.replace "." "" (String.fromFloat opacity)
+
+            css =
+                "opacity:" ++ String.fromFloat opacity ++ ";"
+        in
+        ( { context | backgrounds = Dict.insert ("." ++ className) css context.backgrounds }
+        , class className :: attributes
+        )
 
 
 applyFontColor : Color -> Acc msg -> Acc msg
@@ -566,7 +600,7 @@ applyLetterSpacing spacing ( context, attributes ) =
             String.fromFloat spacing
 
         className =
-            "ls-" ++ String.replace "." "_" spacing_
+            "ls-" ++ String.replace "." "" spacing_
 
         css =
             "letter-spacing:" ++ spacing_ ++ "px;"
@@ -583,7 +617,7 @@ applyWordSpacing spacing ( context, attributes ) =
             String.fromFloat spacing
 
         className =
-            "ws-" ++ String.replace "." "_" spacing_
+            "ws-" ++ String.replace "." "" spacing_
 
         css =
             "word-spacing:" ++ spacing_ ++ "px;"
@@ -609,6 +643,7 @@ applyConfigToContext layout config context =
     , Maybe.map applyAlignX config.alignX
     , Maybe.map applyAlignY config.alignY
     , Maybe.map applyBackground config.background
+    , Just (applyOpacity config.opacity)
     , Maybe.map applyFontColor config.fontColor
     , Maybe.map applyFontSize config.fontSize
     , Maybe.map applyFontFamily config.fontFamily

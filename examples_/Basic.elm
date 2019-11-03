@@ -98,4 +98,5 @@ spacing node =
             , Element.height Element.fill
             , Element.spacing 0
             , Background.color (Element.rgb255 100 100 100)
+            , Element.alpha 0.75
             ]

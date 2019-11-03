@@ -9,6 +9,7 @@ module Element exposing
     , align
     , alignX
     , alignY
+    , alpha
     , background
     , batch
     , bottom
@@ -121,8 +122,7 @@ type alias Common support msg =
 type alias Decoration support msg =
     Attribute
         { support
-            | transparent : ()
-            , alpha : ()
+            | alpha : ()
             , move : ()
             , rotate : ()
             , scale : ()
@@ -319,14 +319,11 @@ pointer =
     Debug.todo "pointer"
 
 
-transparent : Bool -> Attribute { support | transparent : () } msg
-transparent x =
-    Debug.todo "transparent"
-
-
 alpha : Float -> Attribute { support | alpha : () } msg
 alpha x =
-    Debug.todo "alpha"
+    clamp 0 1 x
+        |> Internal.Opacity
+        |> Attribute
 
 
 
