@@ -305,8 +305,18 @@ applyWidth length ( context, attributes ) =
             , class ("we " ++ className) :: attributes
             )
 
-        Minimum _ _ ->
-            ( context, attributes )
+        Minimum x subLength ->
+            let
+                className =
+                    "wmn-" ++ String.fromInt x
+
+                css =
+                    "min-width:" ++ px x ++ ";"
+            in
+            applyWidth subLength
+                ( { context | widths = Dict.insert ("." ++ className) css context.widths }
+                , class className :: attributes
+                )
 
         Maximum x subLength ->
             let
@@ -359,8 +369,18 @@ applyHeight length ( context, attributes ) =
             , class ("he " ++ className) :: attributes
             )
 
-        Minimum _ _ ->
-            ( context, attributes )
+        Minimum x subLength ->
+            let
+                className =
+                    "hmn-" ++ String.fromInt x
+
+                css =
+                    "min-height:" ++ px x ++ ";"
+            in
+            applyHeight subLength
+                ( { context | widths = Dict.insert ("." ++ className) css context.widths }
+                , class className :: attributes
+                )
 
         Maximum x subLength ->
             let

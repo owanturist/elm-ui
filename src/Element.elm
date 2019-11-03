@@ -164,22 +164,22 @@ fill =
 
 portion : Int -> Length
 portion =
-    Internal.Portion
+    Internal.Portion << max 1
 
 
 px : Int -> Length
 px =
-    Internal.Px
+    Internal.Px << max 0
 
 
 minimum : Int -> Length -> Length
-minimum =
-    Internal.Minimum
+minimum x =
+    Internal.Minimum (max 0 x)
 
 
 maximum : Int -> Length -> Length
-maximum =
-    Internal.Maximum
+maximum x =
+    Internal.Maximum (max 0 x)
 
 
 width : Length -> Attribute { support | width : () } msg
@@ -202,10 +202,10 @@ height length =
 
 padding : Int -> Int -> Int -> Int -> Attribute { support | padding : () } msg
 padding t r b l =
-    { top = t
-    , right = r
-    , bottom = b
-    , left = l
+    { top = max 0 t
+    , right = max 0 r
+    , bottom = max 0 b
+    , left = max 0 l
     }
         |> Internal.Padding
         |> Attribute
