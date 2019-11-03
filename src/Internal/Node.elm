@@ -40,6 +40,7 @@ type Prop msg
     = Attribute (VirtualDom.Attribute msg)
     | Batch (List (Prop msg))
       -- G E O M E T R Y
+    | Spacing Int
     | Padding (Box Int)
     | Width Length
     | Height Length
@@ -73,7 +74,8 @@ type Alignment
 
 
 type alias Context =
-    { paddings : Dict String String
+    { spacings : Dict String String
+    , paddings : Dict String String
     , widths : Dict String String
     , heights : Dict String String
     , backgrounds : Dict String String
@@ -89,7 +91,8 @@ type alias Context =
 
 initialContext : Context
 initialContext =
-    { paddings = Dict.empty
+    { spacings = Dict.empty
+    , paddings = Dict.empty
     , widths = Dict.empty
     , heights = Dict.empty
     , backgrounds = Dict.empty
@@ -107,6 +110,7 @@ type alias Config msg =
     { attributes : List (VirtualDom.Attribute msg)
 
     -- G E O M E T R Y
+    , spacing : Maybe Int
     , padding : Maybe (Box Int)
     , width : Maybe Length
     , height : Maybe Length
@@ -132,6 +136,7 @@ emptyConfig =
     { attributes = []
 
     -- G E O M E T R Y
+    , spacing = Nothing
     , padding = Nothing
     , width = Nothing
     , height = Nothing
@@ -185,6 +190,9 @@ applyPropToConfig prop config =
             List.foldr applyPropToConfig config props
 
         -- G E O M E T R Y
+        Spacing space ->
+            { config | spacing = Just space }
+
         Padding box ->
             { config | padding = Just box }
 
@@ -237,13 +245,42 @@ type alias Acc msg =
     ( Context, List (VirtualDom.Attribute msg) )
 
 
+applySpacing : Layout -> Int -> Acc msg -> Acc msg
+applySpacing layout space ( context, attributes ) =
+    let
+        className =
+            "s-" ++ String.fromInt space
+
+        ( selector, css ) =
+            case layout of
+                Single ->
+                    ( ".empty", "" )
+
+                Row ->
+                    ( ".r." ++ className ++ ">.s+.s"
+                    , "margin-left:" ++ px space ++ ";"
+                    )
+
+                Col ->
+                    ( ".c." ++ className ++ ">.s+.s"
+                    , "margin-top:" ++ px space ++ ";"
+                    )
+    in
+    ( { context | paddings = Dict.insert selector css context.paddings }
+    , class className :: attributes
+    )
+
+
 applyPadding : Box Int -> Acc msg -> Acc msg
 applyPadding padding ( context, attributes ) =
     let
         className =
             Box.toClass "p" String.fromInt padding
+
+        css =
+            Box.toCss "padding" px padding
     in
-    ( { context | paddings = Dict.insert ("." ++ className) (Box.toCss "padding" px padding) context.paddings }
+    ( { context | paddings = Dict.insert ("." ++ className) css context.paddings }
     , class className :: attributes
     )
 
@@ -552,9 +589,10 @@ applyConfigToContextFn fn acc =
         |> Maybe.withDefault acc
 
 
-applyConfigToContext : Config msg -> Context -> Acc msg
-applyConfigToContext config context =
-    [ Maybe.map applyPadding config.padding
+applyConfigToContext : Layout -> Config msg -> Context -> Acc msg
+applyConfigToContext layout config context =
+    [ Maybe.map (applySpacing layout) config.spacing
+    , Maybe.map applyPadding config.padding
     , Maybe.map applyWidth config.width
     , Maybe.map applyHeight config.height
     , Maybe.map applyAlignX config.alignX
@@ -644,7 +682,7 @@ renderElement layout props nodes parent context =
             applyPropsToConfig props initialElementConfig
 
         ( nextContext, attributes ) =
-            applyConfigToContext config context
+            applyConfigToContext layout config context
 
         ( finalContext, children ) =
             List.foldr
@@ -732,7 +770,7 @@ render props node =
             applyPropsToConfig props initialUiConfig
 
         ( context, attributes ) =
-            applyConfigToContext config initialContext
+            applyConfigToContext Single config initialContext
 
         ( finalContext, vnode ) =
             renderHelp Single context node

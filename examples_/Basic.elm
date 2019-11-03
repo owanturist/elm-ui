@@ -8,7 +8,7 @@ import Element.Font as Font
 
 
 main =
-    alignDocs
+    spacing column
         |> Element.layout []
 
 
@@ -81,3 +81,18 @@ alignDocs =
         , el [ Background.color (Element.rgb255 100 100 100), Element.centerX ] (text "3")
         , el [ Background.color (Element.rgb255 100 100 100), Element.alignRight ] (text "4")
         ]
+
+
+spacing node =
+    List.range 1 5
+        |> List.map
+            (el
+                [ Background.color (Element.rgb255 200 200 200) ]
+                << text
+                << String.fromInt
+            )
+        |> node
+            [ Element.spacing 10
+            , Element.width Element.fill
+            , Background.color (Element.rgb255 100 100 100)
+            ]

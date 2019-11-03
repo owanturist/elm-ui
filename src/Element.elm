@@ -40,6 +40,7 @@ module Element exposing
     , sansSerif
     , serif
     , shrink
+    , spacing
     , text
     , top
     , typeface
@@ -216,9 +217,11 @@ padding t r b l =
         |> Attribute
 
 
-spacing : Int -> Int -> Int -> Int -> Attribute { support | spacing : () } msg
-spacing t r b l =
-    Debug.todo "spacing"
+spacing : Int -> Attribute { support | spacing : () } msg
+spacing space =
+    space
+        |> Internal.Spacing
+        |> Attribute
 
 
 

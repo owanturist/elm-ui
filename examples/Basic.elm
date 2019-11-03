@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    alignDocs
+    spacing col
         |> Element.layout []
 
 
@@ -79,3 +79,18 @@ alignDocs =
         , el [ Element.background (Element.rgb 100 100 100), Element.alignX Element.center ] (text "3")
         , el [ Element.background (Element.rgb 100 100 100), Element.alignX Element.right ] (text "4")
         ]
+
+
+spacing node =
+    List.range 1 5
+        |> List.map
+            (el
+                [ Element.background (Element.rgb 200 200 200) ]
+                << text
+                << String.fromInt
+            )
+        |> node
+            [ Element.spacing 10
+            , Element.width Element.fill
+            , Element.background (Element.rgb 100 100 100)
+            ]
