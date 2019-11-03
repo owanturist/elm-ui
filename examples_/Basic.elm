@@ -8,7 +8,7 @@ import Element.Font as Font
 
 
 main =
-    spacing column
+    spacing row
         |> Element.layout []
 
 
@@ -87,12 +87,15 @@ spacing node =
     List.range 1 5
         |> List.map
             (el
-                [ Background.color (Element.rgb255 200 200 200) ]
+                [ Background.color (Element.rgb255 200 200 200)
+                , Element.padding 10
+                ]
                 << text
                 << String.fromInt
             )
         |> node
-            [ Element.spacing 10
-            , Element.width Element.fill
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Element.spacing 0
             , Background.color (Element.rgb255 100 100 100)
             ]

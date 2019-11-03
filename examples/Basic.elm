@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    spacing col
+    spacing row
         |> Element.layout []
 
 
@@ -85,12 +85,15 @@ spacing node =
     List.range 1 5
         |> List.map
             (el
-                [ Element.background (Element.rgb 200 200 200) ]
+                [ Element.background (Element.rgb 200 200 200)
+                , Element.padding 10
+                ]
                 << text
                 << String.fromInt
             )
         |> node
-            [ Element.spacing 10
-            , Element.width Element.fill
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Element.spacing 0
             , Element.background (Element.rgb 100 100 100)
             ]

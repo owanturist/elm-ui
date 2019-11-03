@@ -31,6 +31,9 @@ module Element exposing
     , monospace
     , none
     , padding
+    , paddingEach
+    , paddingXY
+    , paddings
     , portion
     , px
     , rgb
@@ -206,8 +209,8 @@ height length =
 -- P A D D I N G   A N D   S P A C I N G
 
 
-padding : Int -> Int -> Int -> Int -> Attribute { support | padding : () } msg
-padding t r b l =
+paddings : Int -> Int -> Int -> Int -> Attribute { support | padding : () } msg
+paddings t r b l =
     { top = max 0 t
     , right = max 0 r
     , bottom = max 0 b
@@ -215,6 +218,27 @@ padding t r b l =
     }
         |> Internal.Padding
         |> Attribute
+
+
+padding : Int -> Attribute { support | padding : () } msg
+padding pad =
+    paddingXY pad pad
+
+
+paddingXY : Int -> Int -> Attribute { support | padding : () } msg
+paddingXY padX padY =
+    paddings padX padY padX padY
+
+
+paddingEach :
+    { top : Int
+    , right : Int
+    , bottom : Int
+    , left : Int
+    }
+    -> Attribute { support | padding : () } msg
+paddingEach pads =
+    paddings pads.top pads.right pads.bottom pads.left
 
 
 spacing : Int -> Attribute { support | spacing : () } msg

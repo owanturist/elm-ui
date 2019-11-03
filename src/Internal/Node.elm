@@ -245,30 +245,41 @@ type alias Acc msg =
     ( Context, List (VirtualDom.Attribute msg) )
 
 
-applySpacing : Layout -> Int -> Acc msg -> Acc msg
-applySpacing layout space ( context, attributes ) =
-    let
-        className =
-            "s-" ++ String.fromInt space
+applySpacing : Layout -> Maybe Int -> Acc msg -> Acc msg
+applySpacing layout spacing ( context, attributes ) =
+    case spacing of
+        Nothing ->
+            ( context
+            , if layout == Single then
+                attributes
 
-        ( selector, css ) =
-            case layout of
-                Single ->
-                    ( ".empty", "" )
+              else
+                class "sev" :: attributes
+            )
 
-                Row ->
-                    ( ".r." ++ className ++ ">.s+.s"
-                    , "margin-left:" ++ px space ++ ";"
-                    )
+        Just space ->
+            let
+                className =
+                    "s-" ++ String.fromInt space
 
-                Col ->
-                    ( ".c." ++ className ++ ">.s+.s"
-                    , "margin-top:" ++ px space ++ ";"
-                    )
-    in
-    ( { context | paddings = Dict.insert selector css context.paddings }
-    , class className :: attributes
-    )
+                ( selector, css ) =
+                    case layout of
+                        Single ->
+                            ( ".empty", "" )
+
+                        Row ->
+                            ( ".r." ++ className ++ ">.s+.s"
+                            , "margin-left:" ++ px space ++ ";"
+                            )
+
+                        Col ->
+                            ( ".c." ++ className ++ ">.s+.s"
+                            , "margin-top:" ++ px space ++ ";"
+                            )
+            in
+            ( { context | paddings = Dict.insert selector css context.paddings }
+            , class className :: attributes
+            )
 
 
 applyPadding : Box Int -> Acc msg -> Acc msg
@@ -591,7 +602,7 @@ applyConfigToContextFn fn acc =
 
 applyConfigToContext : Layout -> Config msg -> Context -> Acc msg
 applyConfigToContext layout config context =
-    [ Maybe.map (applySpacing layout) config.spacing
+    [ Just (applySpacing layout config.spacing)
     , Maybe.map applyPadding config.padding
     , Maybe.map applyWidth config.width
     , Maybe.map applyHeight config.height
