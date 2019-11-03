@@ -8,29 +8,63 @@ import Element.Font as Font
 
 
 main =
+    alignSingleInRow
+        |> Element.layout []
+
+
+alignSingleInRow =
     row
-        [ Background.color (Element.rgb255 100 100 200)
-        , Element.width Element.fill
-        , Element.width Element.fill
+        [ Element.width Element.fill
+        , Element.height Element.fill
         ]
         [ el
-            [ Element.width
-                (Element.fillPortion 2
-                    |> Element.minimum 200
-                    |> Element.maximum 400
-                )
-            , Background.color (Element.rgb255 100 200 100)
+            [ Background.color (Element.rgb255 100 100 200)
+            , Element.width (Element.px 500)
+            , Element.height (Element.px 500)
+
+            -- , Element.alignLeft -- non wrap
+            -- , Element.alignTop -- non wrap
+            -- , Element.centerX -- wrap s.s.e.ctr.ccy.accx
+            -- , Element.centerY -- non wrap
+            -- , Element.alignBottom -- non wrap
+            -- , Element.alignRight -- wrap u.s.e.ctr.ccy.acr
             ]
-            (text "1")
-        , el
-            [ Element.width (Element.fillPortion 2)
-            , Background.color (Element.rgb255 200 200 100)
-            ]
-            (text "2")
-        , el
-            [ Element.width (Element.fillPortion 1)
-            , Background.color (Element.rgb255 100 200 200)
-            ]
-            (text "3")
+            none
         ]
-        |> Element.layout []
+
+
+alignSingleInCol =
+    column
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        ]
+        [ el
+            [ Background.color (Element.rgb255 100 100 200)
+            , Element.width (Element.px 500)
+            , Element.height (Element.px 500)
+
+            -- , Element.alignLeft -- non wrap
+            -- , Element.alignTop -- non wrap
+            -- , Element.centerX -- non wrap
+            -- , Element.centerY -- wrap s.s.e.ctr.accy
+            -- , Element.alignBottom -- wrap u.s.e.ctr.acb
+            -- , Element.alignRight -- non wrap
+            ]
+            none
+        ]
+
+
+alignSingle =
+    el
+        [ Background.color (Element.rgb255 100 100 200)
+        , Element.width (Element.px 500)
+        , Element.height (Element.px 500)
+
+        -- , Element.alignLeft -- non wrap
+        -- , Element.alignTop -- non wrap
+        -- , Element.centerX -- non wrap
+        -- , Element.centerY -- non wrap
+        -- , Element.alignBottom -- non wrap
+        -- , Element.alignRight -- non wrap
+        ]
+        none

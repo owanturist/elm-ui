@@ -6,8 +6,12 @@ module Element exposing
     , Element
     , Font
     , Html
+    , align
+    , alignX
+    , alignY
     , background
     , batch
+    , bottom
     , center
     , col
     , color
@@ -37,6 +41,7 @@ module Element exposing
     , serif
     , shrink
     , text
+    , top
     , typeface
     , width
     , wordSpacing
@@ -67,23 +72,23 @@ text =
 
 el : List (Common {} msg) -> Element msg -> Element msg
 el attributes child =
-    Internal.Element "div"
+    Internal.Element Internal.Single
         (List.map unwrapAttribute attributes)
-        (Internal.Single child)
+        [ child ]
 
 
 col : List (Common { spacing : () } msg) -> List (Element msg) -> Element msg
 col attributes children =
-    Internal.Element "div"
+    Internal.Element Internal.Col
         (List.map unwrapAttribute attributes)
-        (Internal.Col children)
+        children
 
 
 row : List (Common { spacing : () } msg) -> List (Element msg) -> Element msg
 row attributes children =
-    Internal.Element "div"
+    Internal.Element Internal.Row
         (List.map unwrapAttribute attributes)
-        (Internal.Row children)
+        children
 
 
 
@@ -258,8 +263,24 @@ align :
     Alignment { left : (), center : (), right : () }
     -> Alignment { top : (), center : (), bottom : () }
     -> Attribute { support | align : () } msg
-align x y =
-    Debug.todo "align"
+align (Alignment x) (Alignment y) =
+    [ Internal.AlignX x
+    , Internal.AlignY y
+    ]
+        |> Internal.Batch
+        |> Attribute
+
+
+alignX : Alignment { left : (), center : (), right : () } -> Attribute { support | align : () } msg
+alignX (Alignment x) =
+    Internal.AlignX x
+        |> Attribute
+
+
+alignY : Alignment { top : (), center : (), bottom : () } -> Attribute { support | align : () } msg
+alignY (Alignment y) =
+    Internal.AlignY y
+        |> Attribute
 
 
 

@@ -20,13 +20,13 @@ import VirtualDom
 type Node msg
     = Empty
     | Text String
-    | Element String (List (Prop msg)) (Layout msg)
+    | Element Layout (List (Prop msg)) (List (Node msg))
 
 
-type Layout msg
-    = Single (Node msg)
-    | Row (List (Node msg))
-    | Col (List (Node msg))
+type Layout
+    = Single
+    | Row
+    | Col
 
 
 type Font
@@ -43,6 +43,8 @@ type Prop msg
     | Padding (Box Int)
     | Width Length
     | Height Length
+    | AlignX Alignment
+    | AlignY Alignment
       -- B A C K G R O U N D
     | Background Color
       -- F O N T S
@@ -84,7 +86,7 @@ type alias Context =
     , wordSpacings : Dict String String
 
     -- L A Y O U T
-    , fromSingle : Bool
+    , parent : Layout
     }
 
 
@@ -103,7 +105,7 @@ initialContext =
     , wordSpacings = Dict.empty
 
     -- L A Y O U T
-    , fromSingle = True
+    , parent = Single
     }
 
 
@@ -114,6 +116,8 @@ type alias Config msg =
     , padding : Maybe (Box Int)
     , width : Maybe Length
     , height : Maybe Length
+    , alignX : Maybe Alignment
+    , alignY : Maybe Alignment
 
     -- B A C K G R O U N D
     , background : Maybe Color
@@ -137,6 +141,8 @@ initialConfig =
     , padding = Nothing
     , width = Nothing
     , height = Nothing
+    , alignX = Nothing
+    , alignY = Nothing
 
     -- B A C K G R O U N D
     , background = Nothing
@@ -189,6 +195,20 @@ applyPropToConfig prop config =
         Height height ->
             if isNothing config.height then
                 { config | height = Just height }
+
+            else
+                config
+
+        AlignX alignment ->
+            if isNothing config.alignX then
+                { config | alignX = Just alignment }
+
+            else
+                config
+
+        AlignY alignment ->
+            if isNothing config.alignY then
+                { config | alignY = Just alignment }
 
             else
                 config
@@ -396,6 +416,42 @@ applyHeight length ( context, attributes ) =
                 )
 
 
+applyAlignX : Alignment -> Acc msg -> Acc msg
+applyAlignX alignment ( context, attributes ) =
+    ( context
+    , case alignment of
+        Start ->
+            class "ah al" :: attributes
+
+        Middle ->
+            class "ah cx" :: attributes
+
+        End ->
+            class "ah ar" :: attributes
+
+        Justify ->
+            attributes
+    )
+
+
+applyAlignY : Alignment -> Acc msg -> Acc msg
+applyAlignY alignment ( context, attributes ) =
+    ( context
+    , case alignment of
+        Start ->
+            class "av at" :: attributes
+
+        Middle ->
+            class "av cy" :: attributes
+
+        End ->
+            class "av ab" :: attributes
+
+        Justify ->
+            attributes
+    )
+
+
 applyBackground : Color -> Acc msg -> Acc msg
 applyBackground background ( context, attributes ) =
     let
@@ -545,6 +601,8 @@ applyProps props context =
     [ Maybe.map applyPadding config.padding
     , Maybe.map applyWidth config.width
     , Maybe.map applyHeight config.height
+    , Maybe.map applyAlignX config.alignX
+    , Maybe.map applyAlignY config.alignY
     , Maybe.map applyBackground config.background
     , Maybe.map applyFontColor config.fontColor
     , Maybe.map applyFontSize config.fontSize
@@ -576,7 +634,7 @@ renderText : Context -> String -> ( Context, VirtualDom.Node msg )
 renderText context txt =
     ( context
     , VirtualDom.node "div"
-        [ if context.fromSingle then
+        [ if context.parent == Single then
             class "s t wf hf"
 
           else
@@ -586,22 +644,21 @@ renderText context txt =
     )
 
 
-renderSingleElement : Context -> String -> List (Prop msg) -> Node msg -> ( Context, VirtualDom.Node msg )
-renderSingleElement context tag props node =
-    let
-        ( nextContext, attributes ) =
-            applyProps (Width Shrink :: Height Shrink :: props) context
+layoutToClassName : Layout -> String
+layoutToClassName layout =
+    case layout of
+        Single ->
+            "s e"
 
-        ( finalContext, child ) =
-            renderHelp { nextContext | fromSingle = True } node
-    in
-    ( finalContext
-    , VirtualDom.node tag (class "s e" :: attributes) [ child ]
-    )
+        Row ->
+            "s r"
+
+        Col ->
+            "s c"
 
 
-renderBatchElement : String -> Context -> String -> List (Prop msg) -> List (Node msg) -> ( Context, VirtualDom.Node msg )
-renderBatchElement className context tag props nodes =
+renderBatchElement : Context -> Layout -> List (Prop msg) -> List (Node msg) -> ( Context, VirtualDom.Node msg )
+renderBatchElement context layout props nodes =
     let
         ( nextContext, attributes ) =
             applyProps (Width Shrink :: Height Shrink :: props) context
@@ -611,27 +668,14 @@ renderBatchElement className context tag props nodes =
                 (\node ( contextAcc, childrenAcc ) ->
                     Tuple.mapSecond
                         (\child -> child :: childrenAcc)
-                        (renderHelp { contextAcc | fromSingle = False } node)
+                        (renderHelp { contextAcc | parent = layout } node)
                 )
                 ( nextContext, [] )
                 nodes
     in
     ( finalContext
-    , VirtualDom.node tag (class className :: attributes) children
+    , VirtualDom.node "div" (class (layoutToClassName layout) :: attributes) children
     )
-
-
-renderElement : Context -> String -> List (Prop msg) -> Layout msg -> ( Context, VirtualDom.Node msg )
-renderElement context tag props layout =
-    case layout of
-        Single node ->
-            renderSingleElement context tag props node
-
-        Row nodes ->
-            renderBatchElement "s r" context tag props nodes
-
-        Col nodes ->
-            renderBatchElement "s c" context tag props nodes
 
 
 renderHelp : Context -> Node msg -> ( Context, VirtualDom.Node msg )
@@ -643,8 +687,8 @@ renderHelp context node =
         Text txt ->
             renderText context txt
 
-        Element tag props layout ->
-            renderElement context tag props layout
+        Element layout props nodes ->
+            renderBatchElement context layout props nodes
 
 
 px : Int -> String

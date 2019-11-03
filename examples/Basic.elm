@@ -2,33 +2,68 @@ module Main exposing (main)
 
 {-| -}
 
-import Element exposing (col, el, row, text)
+import Element exposing (col, el, empty, row, text)
 
 
 main =
+    alignSingleInRow
+        |> Element.layout []
+
+
+alignSingleInRow =
     row
-        [ Element.background (Element.rgb 100 100 200)
-        , Element.width Element.fill
+        [ Element.width Element.fill
         , Element.height Element.fill
         ]
         [ el
-            [ Element.width
-                (Element.portion 2
-                    |> Element.minimum 200
-                    |> Element.maximum 400
-                )
-            , Element.background (Element.rgb 100 200 100)
+            [ Element.background (Element.rgb 100 100 200)
+            , Element.width (Element.px 500)
+            , Element.height (Element.px 500)
+
+            -- , Element.alignLeft -- non wrap
+            -- , Element.alignTop -- non wrap
+            , Element.alignX Element.center -- wrap s
+
+            -- , Element.centerY -- non wrap
+            -- , Element.alignBottom -- non wrap
+            -- , Element.alignRight -- wrap u
             ]
-            (text "1")
-        , el
-            [ Element.width (Element.portion 2)
-            , Element.background (Element.rgb 200 200 100)
-            ]
-            (text "2")
-        , el
-            [ Element.width (Element.portion 1)
-            , Element.background (Element.rgb 100 200 200)
-            ]
-            (text "3")
+            empty
         ]
-        |> Element.layout []
+
+
+alignSingleInCol =
+    col
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        ]
+        [ el
+            [ Element.background (Element.rgb 100 100 200)
+            , Element.width (Element.px 500)
+            , Element.height (Element.px 500)
+
+            -- , Element.alignLeft -- non wrap
+            -- , Element.alignTop -- non wrap
+            -- , Element.centerX -- non wrap
+            -- , Element.centerY -- wrap s
+            -- , Element.alignBottom -- wrap u
+            -- , Element.alignRight -- non wrap
+            ]
+            empty
+        ]
+
+
+alignSingle =
+    el
+        [ Element.background (Element.rgb 100 100 200)
+        , Element.width (Element.px 500)
+        , Element.height (Element.px 500)
+
+        -- , Element.alignLeft -- non wrap
+        -- , Element.alignTop -- non wrap
+        -- , Element.centerX -- non wrap
+        -- , Element.centerY -- non wrap
+        -- , Element.alignBottom -- non wrap
+        -- , Element.alignRight -- non wrap
+        ]
+        empty
