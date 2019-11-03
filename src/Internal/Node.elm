@@ -57,6 +57,8 @@ type Prop msg
     | FontDecoration String
     | LetterSpacing Float
     | WordSpacing Float
+      -- B E H A V I O U R
+    | Pointer
 
 
 type Length
@@ -136,6 +138,9 @@ type alias Config msg =
     , fontDecoration : Maybe String
     , letterSpacing : Maybe Float
     , wordSpacing : Maybe Float
+
+    -- B E H A V I O U R
+    , pointer : Bool
     }
 
 
@@ -163,6 +168,9 @@ emptyConfig =
     , fontDecoration = Nothing
     , letterSpacing = Nothing
     , wordSpacing = Nothing
+
+    -- B E H A V I O U R
+    , pointer = False
     }
 
 
@@ -218,10 +226,10 @@ applyPropToConfig prop config =
             { config | alignY = Just alignment }
 
         -- D R E S S
+        --
         Background color ->
             { config | background = Just color }
 
-        -- D R E S S
         Opacity x ->
             { config | opacity = x }
 
@@ -247,6 +255,10 @@ applyPropToConfig prop config =
 
         WordSpacing spacing ->
             { config | wordSpacing = Just spacing }
+
+        -- B E H A V I O U R
+        Pointer ->
+            { config | pointer = True }
 
 
 applyPropsToConfig : List (Prop msg) -> Config msg -> Config msg
@@ -627,6 +639,17 @@ applyWordSpacing spacing ( context, attributes ) =
     )
 
 
+applyPointer : Bool -> Acc msg -> Acc msg
+applyPointer x ( context, attributes ) =
+    ( context
+    , if x then
+        class "cptr" :: attributes
+
+      else
+        attributes
+    )
+
+
 applyConfigToContextFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
 applyConfigToContextFn fn acc =
     fn
@@ -651,6 +674,7 @@ applyConfigToContext layout config context =
     , Maybe.map applyFontDecoration config.fontDecoration
     , Maybe.map applyLetterSpacing config.letterSpacing
     , Maybe.map applyWordSpacing config.wordSpacing
+    , Just (applyPointer config.pointer)
     ]
         |> List.foldr applyConfigToContextFn ( context, config.attributes )
 

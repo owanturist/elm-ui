@@ -35,6 +35,7 @@ module Element exposing
     , paddingEach
     , paddingXY
     , paddings
+    , pointer
     , portion
     , px
     , rgb
@@ -115,6 +116,7 @@ type alias Common support msg =
             , fontAlign : ()
             , letterSpacing : ()
             , wordSpacing : ()
+            , pointer : ()
         }
         msg
 
@@ -316,7 +318,8 @@ alignY (Alignment y) =
 
 pointer : Attribute { support | pointer : () } msg
 pointer =
-    Debug.todo "pointer"
+    Internal.Pointer
+        |> Attribute
 
 
 alpha : Float -> Attribute { support | alpha : () } msg

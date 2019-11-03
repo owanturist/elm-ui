@@ -89,6 +89,7 @@ spacing node =
             (el
                 [ Background.color (Element.rgb255 200 200 200)
                 , Element.padding 10
+                , Element.pointer
                 ]
                 << text
                 << String.fromInt
@@ -96,7 +97,6 @@ spacing node =
         |> node
             [ Element.width Element.fill
             , Element.height Element.fill
-            , Element.spacing 0
+            , Element.spacing 20
             , Background.color (Element.rgb255 100 100 100)
-            , Element.alpha 0.75
             ]
