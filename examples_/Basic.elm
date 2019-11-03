@@ -8,7 +8,7 @@ import Element.Font as Font
 
 
 main =
-    alignSingleInRow
+    alignDocs
         |> Element.layout []
 
 
@@ -24,8 +24,7 @@ alignSingleInRow =
 
             -- , Element.alignLeft -- non wrap
             -- , Element.alignTop -- non wrap
-            , Element.centerX -- wrap s.s.e.ctr.ccy.accx
-
+            -- , Element.centerX -- wrap s.s.e.ctr.ccy.accx
             -- , Element.centerY -- non wrap
             -- , Element.alignBottom -- non wrap
             -- , Element.alignRight -- wrap u.s.e.ctr.ccy.acr
@@ -46,8 +45,9 @@ alignSingleInCol =
 
             -- , Element.alignLeft -- non wrap
             -- , Element.alignTop -- non wrap
-            -- , Element.centerX -- non wrap
-            -- , Element.centerY -- wrap s.s.e.ctr.accy
+            , Element.centerX -- non wrap
+            , Element.centerY -- wrap s.s.e.ctr.accy
+
             -- , Element.alignBottom -- wrap u.s.e.ctr.acb
             -- , Element.alignRight -- non wrap
             ]
@@ -69,3 +69,15 @@ alignSingle =
         -- , Element.alignRight -- non wrap
         ]
         none
+
+
+alignDocs =
+    row
+        [ Background.color (Element.rgb255 100 100 200)
+        , Element.width Element.fill
+        ]
+        [ el [ Background.color (Element.rgb255 100 100 100) ] (text "1")
+        , el [ Background.color (Element.rgb255 100 100 100), Element.alignLeft ] (text "2")
+        , el [ Background.color (Element.rgb255 100 100 100), Element.centerX ] (text "3")
+        , el [ Background.color (Element.rgb255 100 100 100), Element.alignRight ] (text "4")
+        ]

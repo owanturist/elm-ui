@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    alignSingleInRow
+    alignDocs
         |> Element.layout []
 
 
@@ -22,11 +22,10 @@ alignSingleInRow =
 
             -- , Element.alignLeft -- non wrap
             -- , Element.alignTop -- non wrap
-            , Element.alignX Element.center -- wrap s
-
+            -- , Element.alignX Element.center -- wrap s
             -- , Element.centerY -- non wrap
             -- , Element.alignBottom -- non wrap
-            -- , Element.alignRight -- wrap u
+            -- , Element.alignX Element.right -- wrap u
             ]
             empty
         ]
@@ -45,9 +44,10 @@ alignSingleInCol =
             -- , Element.alignLeft -- non wrap
             -- , Element.alignTop -- non wrap
             -- , Element.centerX -- non wrap
-            -- , Element.centerY -- wrap s
-            -- , Element.alignBottom -- wrap u
+            -- , Element.alignY Element.center -- wrap s
+            -- , Element.alignY Element.bottom -- wrap u
             -- , Element.alignRight -- non wrap
+            , Element.align Element.center Element.center
             ]
             empty
         ]
@@ -67,3 +67,15 @@ alignSingle =
         -- , Element.alignRight -- non wrap
         ]
         empty
+
+
+alignDocs =
+    row
+        [ Element.background (Element.rgb 100 100 200)
+        , Element.width Element.fill
+        ]
+        [ el [ Element.background (Element.rgb 100 100 100) ] (text "1")
+        , el [ Element.background (Element.rgb 100 100 100), Element.alignX Element.left ] (text "2")
+        , el [ Element.background (Element.rgb 100 100 100), Element.alignX Element.center ] (text "3")
+        , el [ Element.background (Element.rgb 100 100 100), Element.alignX Element.right ] (text "4")
+        ]

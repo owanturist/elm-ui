@@ -84,9 +84,6 @@ type alias Context =
     , fontFamilies : Dict String String
     , letterSpacings : Dict String String
     , wordSpacings : Dict String String
-
-    -- L A Y O U T
-    , parent : Layout
     }
 
 
@@ -103,9 +100,6 @@ initialContext =
     , fontFamilies = Dict.empty
     , letterSpacings = Dict.empty
     , wordSpacings = Dict.empty
-
-    -- L A Y O U T
-    , parent = Single
     }
 
 
@@ -592,11 +586,11 @@ renderEmpty context =
     ( context, empty )
 
 
-renderText : String -> Context -> ( Context, VirtualDom.Node msg )
-renderText txt context =
+renderText : String -> Layout -> Context -> ( Context, VirtualDom.Node msg )
+renderText txt parent context =
     ( context
     , VirtualDom.node "div"
-        [ if context.parent == Single then
+        [ if parent == Single then
             class "s t wf hf"
 
           else
@@ -619,8 +613,32 @@ layoutToClassName layout =
             "s c cl ct"
 
 
-renderElement : Layout -> List (Prop msg) -> List (Node msg) -> Context -> ( Context, VirtualDom.Node msg )
-renderElement layout props nodes context =
+renderAlignContainer : String -> String -> VirtualDom.Node msg -> VirtualDom.Node msg
+renderAlignContainer tag className vnode =
+    VirtualDom.node tag [ class ("s e ctr" ++ className) ] [ vnode ]
+
+
+wrapAlignContainer : Layout -> Config msg -> VirtualDom.Node msg -> VirtualDom.Node msg
+wrapAlignContainer layout config vnode =
+    case ( layout, config.alignX, config.alignY ) of
+        ( Row, Just Middle, _ ) ->
+            renderAlignContainer "s" "ccy accx" vnode
+
+        ( Row, Just End, _ ) ->
+            renderAlignContainer "u" "ccy acr" vnode
+
+        ( Col, _, Just Middle ) ->
+            renderAlignContainer "s" "accy" vnode
+
+        ( Col, _, Just End ) ->
+            renderAlignContainer "u" "acb" vnode
+
+        _ ->
+            vnode
+
+
+renderElement : Layout -> List (Prop msg) -> List (Node msg) -> Layout -> Context -> ( Context, VirtualDom.Node msg )
+renderElement layout props nodes parent context =
     let
         config =
             applyPropsToConfig props initialElementConfig
@@ -633,30 +651,30 @@ renderElement layout props nodes context =
                 (\node ( contextAcc, childrenAcc ) ->
                     Tuple.mapSecond
                         (\child -> child :: childrenAcc)
-                        (renderHelp { contextAcc | parent = layout } node)
+                        (renderHelp layout contextAcc node)
                 )
                 ( nextContext, [] )
                 nodes
-
-        vnode =
-            VirtualDom.node "div" (class (layoutToClassName layout) :: attributes) children
     in
     ( finalContext
-    , VirtualDom.node "div" (class (layoutToClassName layout) :: attributes) children
+    , VirtualDom.node "div"
+        (class (layoutToClassName layout) :: attributes)
+        children
+        |> wrapAlignContainer parent config
     )
 
 
-renderHelp : Context -> Node msg -> ( Context, VirtualDom.Node msg )
-renderHelp context node =
+renderHelp : Layout -> Context -> Node msg -> ( Context, VirtualDom.Node msg )
+renderHelp parent context node =
     case node of
         Empty ->
             renderEmpty context
 
         Text txt ->
-            renderText txt context
+            renderText txt parent context
 
         Element layout props nodes ->
-            renderElement layout props nodes context
+            renderElement layout props nodes parent context
 
 
 px : Int -> String
@@ -717,7 +735,7 @@ render props node =
             applyConfigToContext config initialContext
 
         ( finalContext, vnode ) =
-            renderHelp context node
+            renderHelp Single context node
     in
     VirtualDom.node "div"
         (class "ui s e" :: attributes)
