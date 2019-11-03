@@ -22,6 +22,8 @@ module Element exposing
     , layout
     , left
     , letterSpacing
+    , maximum
+    , minimum
     , monospace
     , none
     , padding

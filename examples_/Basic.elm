@@ -8,13 +8,13 @@ import Element.Font as Font
 
 
 main =
-    row
+    column
         [ Background.color (Element.rgb255 100 100 200)
         , Element.width Element.fill
         , Element.height Element.fill
         ]
         [ el
-            [ Element.width (Element.maximum 100 Element.fill)
+            [ Element.height (Element.maximum 200 (Element.fillPortion 2))
             , Background.color (Element.rgb255 100 200 100)
             ]
             (text "1")

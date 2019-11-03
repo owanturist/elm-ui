@@ -305,8 +305,21 @@ applyWidth length ( context, attributes ) =
             , class ("we " ++ className) :: attributes
             )
 
-        _ ->
+        Minimum _ _ ->
             ( context, attributes )
+
+        Maximum x subLength ->
+            let
+                className =
+                    "wmx-" ++ String.fromInt x
+
+                css =
+                    "max-width:" ++ px x ++ ";"
+            in
+            applyWidth subLength
+                ( { context | widths = Dict.insert ("." ++ className) css context.widths }
+                , class className :: attributes
+                )
 
 
 applyHeight : Length -> Acc msg -> Acc msg
@@ -346,8 +359,21 @@ applyHeight length ( context, attributes ) =
             , class ("he " ++ className) :: attributes
             )
 
-        _ ->
+        Minimum _ _ ->
             ( context, attributes )
+
+        Maximum x subLength ->
+            let
+                className =
+                    "hmx-" ++ String.fromInt x
+
+                css =
+                    "max-height:" ++ px x ++ ";"
+            in
+            applyHeight subLength
+                ( { context | widths = Dict.insert ("." ++ className) css context.widths }
+                , class className :: attributes
+                )
 
 
 applyBackground : Color -> Acc msg -> Acc msg

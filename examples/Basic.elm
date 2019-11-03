@@ -6,13 +6,13 @@ import Element exposing (col, el, row, text)
 
 
 main =
-    row
+    col
         [ Element.background (Element.rgb 100 100 200)
         , Element.width Element.fill
         , Element.height Element.fill
         ]
         [ el
-            [ Element.width (Element.px 100)
+            [ Element.height (Element.maximum 200 (Element.portion 2))
             , Element.background (Element.rgb 100 200 100)
             ]
             (text "1")
