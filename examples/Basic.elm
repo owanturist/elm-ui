@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    spacing row
+    wrappedRowWrap
         |> Element.layout []
 
 
@@ -98,3 +98,39 @@ spacing node =
             , Element.spacing 20
             , Element.background (Element.rgb 100 100 100)
             ]
+
+
+wrappedRowWrap =
+    col
+        [ Element.spacing 30
+        , Element.padding 60
+        , Element.height (Element.px 500)
+        , Element.align Element.center Element.center
+        , Element.background (Element.rgb 200 150 150)
+        ]
+        [ el
+            [ Element.width Element.fill
+            , Element.background (Element.rgb 150 150 150)
+            ]
+            (text "hi")
+        , List.range 0 10
+            |> List.map
+                (el
+                    [ Element.width (Element.px 100)
+                    , Element.background (Element.rgb 200 200 200)
+                    ]
+                    << text
+                    << String.fromInt
+                )
+            |> row
+                [ Element.wrapped 50
+                , Element.spacing 20
+                , Element.background (Element.rgb 100 100 100)
+                , Element.alpha 0.5
+                ]
+        , el
+            [ Element.width Element.fill
+            , Element.background (Element.rgb 150 150 150)
+            ]
+            (text "by")
+        ]

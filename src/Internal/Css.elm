@@ -40,6 +40,7 @@ module Internal.Css exposing
     , spaceEvenly
     , spacingCol
     , spacingRow
+    , spacingWrappedRow
     , static
     , text
     , textCenter
@@ -55,6 +56,7 @@ module Internal.Css exposing
     , widthPortion
     , widthPx
     , wordSpacing
+    , wrapped
     )
 
 import Murmur3
@@ -648,6 +650,20 @@ inputMultilineWrapper =
 
 
 -- D Y N A M I C   C S S
+
+
+spacingWrappedRow : Int -> Int -> ( String, String, String )
+spacingWrappedRow spaceX spaceY =
+    ( String.join "-" [ "s", int spaceX, int spaceY ]
+    , String.concat
+        [ rule "margin-left" (px -spaceX)
+        , rule "margin-top" (px -spaceY)
+        ]
+    , String.concat
+        [ rule "margin-left" (px spaceX)
+        , rule "margin-top" (px spaceY)
+        ]
+    )
 
 
 spacingRow : Int -> ( String, String )

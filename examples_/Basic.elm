@@ -2,13 +2,13 @@ module Main exposing (main)
 
 {-| -}
 
-import Element exposing (column, el, none, row, text)
+import Element exposing (column, el, none, row, text, wrappedRow)
 import Element.Background as Background
 import Element.Font as Font
 
 
 main =
-    spacing row
+    wrappedRowWrap
         |> Element.layout []
 
 
@@ -100,3 +100,40 @@ spacing node =
             , Element.spacing 20
             , Background.color (Element.rgb255 100 100 100)
             ]
+
+
+wrappedRowWrap =
+    column
+        [ Element.spacing 30
+        , Element.padding 60
+        , Element.height (Element.px 500)
+        , Element.centerX
+        , Element.centerY
+        , Background.color (Element.rgb255 200 150 150)
+        ]
+        [ el
+            [ Element.width Element.fill
+            , Background.color (Element.rgb255 150 150 150)
+            ]
+            (text "hi")
+        , List.range 0 10
+            |> List.map
+                (el
+                    [ Element.width (Element.px 100)
+                    , Background.color (Element.rgb255 200 200 200)
+                    ]
+                    << text
+                    << String.fromInt
+                )
+            |> wrappedRow
+                [ Element.spacing 20
+                , Background.color (Element.rgb255 100 100 100)
+                , Element.alpha 0.5
+                , Element.alignBottom
+                ]
+        , el
+            [ Element.width Element.fill
+            , Background.color (Element.rgb255 150 150 150)
+            ]
+            (text "by")
+        ]

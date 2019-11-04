@@ -61,6 +61,7 @@ type Prop msg
     | Height Length
     | AlignX Alignment
     | AlignY Alignment
+    | Wrapped Int
       -- D R E S S
     | Background Color
     | Opacity Float
@@ -92,42 +93,12 @@ type Alignment
 
 
 type alias Context =
-    { spacings : Dict String String
-    , paddings : Dict String String
-    , widths : Dict String String
-    , heights : Dict String String
-
-    -- D R E S S
-    , backgrounds : Dict String String
-    , opacities : Dict String String
-
-    -- F O N T S
-    , fontColors : Dict String String
-    , fontSizes : Dict String String
-    , fontFamilies : Dict String String
-    , letterSpacings : Dict String String
-    , wordSpacings : Dict String String
-    }
+    Dict String String
 
 
 initialContext : Context
 initialContext =
-    { spacings = Dict.empty
-    , paddings = Dict.empty
-    , widths = Dict.empty
-    , heights = Dict.empty
-
-    -- D R E S S
-    , backgrounds = Dict.empty
-    , opacities = Dict.empty
-
-    -- F O N T S
-    , fontColors = Dict.empty
-    , fontSizes = Dict.empty
-    , fontFamilies = Dict.empty
-    , letterSpacings = Dict.empty
-    , wordSpacings = Dict.empty
-    }
+    Dict.empty
 
 
 type alias Config msg =
@@ -140,6 +111,7 @@ type alias Config msg =
     , height : Maybe Length
     , alignX : Maybe Alignment
     , alignY : Maybe Alignment
+    , wrapped : Maybe Int
 
     -- D R E S S
     , background : Maybe Color
@@ -155,7 +127,7 @@ type alias Config msg =
     , wordSpacing : Maybe Float
 
     -- S P E C I A L   S T A T E
-    , pointer : Maybe Bool
+    , pointer : Bool
     }
 
 
@@ -170,6 +142,7 @@ initialConfig =
     , height = Nothing
     , alignX = Nothing
     , alignY = Nothing
+    , wrapped = Nothing
 
     -- D R E S S
     , background = Nothing
@@ -185,8 +158,13 @@ initialConfig =
     , wordSpacing = Nothing
 
     -- S P E C I A L   S T A T E
-    , pointer = Nothing
+    , pointer = False
     }
+
+
+div : List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VirtualDom.Node msg
+div =
+    VirtualDom.node "div"
 
 
 class : String -> VirtualDom.Attribute msg
@@ -252,6 +230,13 @@ applyPropToConfig prop config =
         AlignY alignment ->
             if isNothing config.alignY then
                 { config | alignY = Just alignment }
+
+            else
+                config
+
+        Wrapped space ->
+            if isNothing config.wrapped then
+                { config | wrapped = Just space }
 
             else
                 config
@@ -325,11 +310,7 @@ applyPropToConfig prop config =
 
         -- S P E C I A L   S T A T E
         Pointer ->
-            if isNothing config.pointer then
-                { config | pointer = Just True }
-
-            else
-                config
+            { config | pointer = True }
 
 
 applyPropsToConfig : List (Prop msg) -> Config msg
@@ -341,10 +322,10 @@ type alias Acc msg =
     ( Context, List (VirtualDom.Attribute msg) )
 
 
-applySpacing : Layout -> Maybe Int -> Acc msg -> Acc msg
-applySpacing layout spacing ( context, attributes ) =
-    case ( layout, spacing ) of
-        ( Row, Just space ) ->
+applySpacing : Layout -> Maybe Int -> Maybe Int -> Acc msg -> Acc msg
+applySpacing layout spacing wrapped ( context, attributes ) =
+    case ( layout, spacing, wrapped ) of
+        ( Row, Just space, Nothing ) ->
             let
                 ( className, css ) =
                     Css.spacingRow space
@@ -352,11 +333,28 @@ applySpacing layout spacing ( context, attributes ) =
                 selector =
                     Css.dot Css.row ++ Css.dot className ++ ">" ++ Css.dot Css.any ++ "+" ++ Css.dot Css.any
             in
-            ( { context | paddings = Dict.insert selector css context.paddings }
+            ( Dict.insert selector css context
             , class className :: attributes
             )
 
-        ( Col, Just space ) ->
+        ( Row, Just spaceX, Just spaceY ) ->
+            let
+                ( className, parentCss, childCss ) =
+                    Css.spacingWrappedRow spaceX spaceY
+
+                parentSelector =
+                    Css.dot Css.single ++ Css.dot className ++ ">" ++ Css.dot Css.wrapped
+
+                childSelector =
+                    parentSelector ++ ">" ++ Css.dot Css.any
+            in
+            ( context
+                |> Dict.insert parentSelector parentCss
+                |> Dict.insert childSelector childCss
+            , class className :: attributes
+            )
+
+        ( Col, Just space, _ ) ->
             let
                 ( className, css ) =
                     Css.spacingCol space
@@ -364,7 +362,7 @@ applySpacing layout spacing ( context, attributes ) =
                 selector =
                     Css.dot Css.col ++ Css.dot className ++ ">" ++ Css.dot Css.any ++ "+" ++ Css.dot Css.any
             in
-            ( { context | paddings = Dict.insert selector css context.paddings }
+            ( Dict.insert selector css context
             , class className :: attributes
             )
 
@@ -384,7 +382,7 @@ applyPadding { t, r, b, l } ( context, attributes ) =
         ( className, css ) =
             Css.padding t r b l
     in
-    ( { context | paddings = Dict.insert (Css.dot className) css context.paddings }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -407,7 +405,7 @@ applyWidth length ( context, attributes ) =
                 ( className, css ) =
                     Css.widthPortion n
             in
-            ( { context | widths = Dict.insert (Css.dot Css.row ++ ">" ++ Css.dot className) css context.widths }
+            ( Dict.insert (Css.dot Css.row ++ ">" ++ Css.dot className) css context
             , classes [ Css.widthFillPortion, className ] :: attributes
             )
 
@@ -416,7 +414,7 @@ applyWidth length ( context, attributes ) =
                 ( className, css ) =
                     Css.widthPx x
             in
-            ( { context | widths = Dict.insert (Css.dot className) css context.widths }
+            ( Dict.insert (Css.dot className) css context
             , classes [ Css.widthExact, className ] :: attributes
             )
 
@@ -426,7 +424,7 @@ applyWidth length ( context, attributes ) =
                     Css.widthMin x
             in
             applyWidth subLength
-                ( { context | widths = Dict.insert (Css.dot className) css context.widths }
+                ( Dict.insert (Css.dot className) css context
                 , class className :: attributes
                 )
 
@@ -436,7 +434,7 @@ applyWidth length ( context, attributes ) =
                     Css.widthMax x
             in
             applyWidth subLength
-                ( { context | widths = Dict.insert (Css.dot className) css context.widths }
+                ( Dict.insert (Css.dot className) css context
                 , class className :: attributes
                 )
 
@@ -459,7 +457,7 @@ applyHeight length ( context, attributes ) =
                 ( className, css ) =
                     Css.heightPortion n
             in
-            ( { context | heights = Dict.insert (Css.dot Css.col ++ ">" ++ Css.dot className) css context.heights }
+            ( Dict.insert (Css.dot Css.col ++ ">" ++ Css.dot className) css context
             , classes [ Css.heightFillPortion, className ] :: attributes
             )
 
@@ -468,7 +466,7 @@ applyHeight length ( context, attributes ) =
                 ( className, css ) =
                     Css.heightPx x
             in
-            ( { context | heights = Dict.insert (Css.dot className) css context.heights }
+            ( Dict.insert (Css.dot className) css context
             , classes [ Css.heightExact, className ] :: attributes
             )
 
@@ -478,7 +476,7 @@ applyHeight length ( context, attributes ) =
                     Css.heightMin x
             in
             applyHeight subLength
-                ( { context | widths = Dict.insert (Css.dot className) css context.widths }
+                ( Dict.insert (Css.dot className) css context
                 , class className :: attributes
                 )
 
@@ -488,7 +486,7 @@ applyHeight length ( context, attributes ) =
                     Css.heightMax x
             in
             applyHeight subLength
-                ( { context | widths = Dict.insert (Css.dot className) css context.widths }
+                ( Dict.insert (Css.dot className) css context
                 , class className :: attributes
                 )
 
@@ -535,7 +533,7 @@ applyBackground { r, g, b, a } ( context, attributes ) =
         ( className, css ) =
             Css.backgroundColor r g b a
     in
-    ( { context | backgrounds = Dict.insert (Css.dot className) css context.backgrounds }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -550,7 +548,7 @@ applyOpacity x ( context, attributes ) =
             ( className, css ) =
                 Css.opacity x
         in
-        ( { context | backgrounds = Dict.insert (Css.dot className) css context.backgrounds }
+        ( Dict.insert (Css.dot className) css context
         , class className :: attributes
         )
 
@@ -561,7 +559,7 @@ applyFontColor { r, g, b, a } ( context, attributes ) =
         ( className, css ) =
             Css.fontColor r g b a
     in
-    ( { context | fontColors = Dict.insert (Css.dot className) css context.fontColors }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -572,7 +570,7 @@ applyFontSize size ( context, attributes ) =
         ( className, css ) =
             Css.fontSize size
     in
-    ( { context | fontSizes = Dict.insert (Css.dot className) css context.fontSizes }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -599,7 +597,7 @@ applyFontFamily family ( context, attributes ) =
         ( className, css ) =
             Css.fontFamily (List.map fontToString family)
     in
-    ( { context | fontFamilies = Dict.insert (Css.dot className) css context.fontFamilies }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -639,7 +637,7 @@ applyLetterSpacing spacing ( context, attributes ) =
         ( className, css ) =
             Css.letterSpacing spacing
     in
-    ( { context | letterSpacings = Dict.insert (Css.dot className) css context.letterSpacings }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -650,7 +648,7 @@ applyWordSpacing spacing ( context, attributes ) =
         ( className, css ) =
             Css.wordSpacing spacing
     in
-    ( { context | wordSpacings = Dict.insert (Css.dot className) css context.wordSpacings }
+    ( Dict.insert (Css.dot className) css context
     , class className :: attributes
     )
 
@@ -674,7 +672,7 @@ applyOptional fn x =
 applyConfigToContext : Layout -> Config msg -> Context -> Acc msg
 applyConfigToContext layout config context =
     ( context, config.attributes )
-        |> applySpacing layout config.spacing
+        |> applySpacing layout config.spacing config.wrapped
         |> applyOptional applyPadding config.padding
         |> applyOptional applyWidth config.width
         |> applyOptional applyHeight config.height
@@ -689,7 +687,7 @@ applyConfigToContext layout config context =
         |> applyOptional applyFontDecoration config.fontDecoration
         |> applyOptional applyLetterSpacing config.letterSpacing
         |> applyOptional applyWordSpacing config.wordSpacing
-        |> applyOptional applyPointer config.pointer
+        |> applyPointer config.pointer
 
 
 empty : VirtualDom.Node msg
@@ -715,7 +713,7 @@ textFromRowOrColClass =
 renderText : String -> Layout -> Context -> ( Context, VirtualDom.Node msg )
 renderText txt parent context =
     ( context
-    , VirtualDom.node "div"
+    , div
         [ if parent == Single then
             textFromSingleClass
 
@@ -800,11 +798,18 @@ renderElement layout props nodes parent context =
                 )
                 ( nextContext, [] )
                 nodes
+
+        vnode =
+            if isNothing config.wrapped then
+                div (layoutToClass layout :: attributes) children
+
+            else
+                div (layoutSingleClass :: attributes)
+                    [ div [ layoutRowClass, class Css.wrapped ] children
+                    ]
     in
     ( finalContext
-    , VirtualDom.node "div"
-        (layoutToClass layout :: attributes)
-        children
+    , vnode
         |> wrapAlignContainer parent config
     )
 
@@ -822,26 +827,12 @@ renderHelp parent context node =
             renderElement layout props nodes parent context
 
 
-renderSelectors : Dict String String -> List ( String, VirtualDom.Node msg ) -> List ( String, VirtualDom.Node msg )
-renderSelectors selectors nodes =
-    Dict.foldr
-        (\selector rules acc -> ( selector, VirtualDom.text (selector ++ "{" ++ rules ++ "}") ) :: acc)
-        nodes
-        selectors
-
-
 renderContext : Context -> VirtualDom.Node msg
 renderContext context =
-    []
-        |> renderSelectors context.paddings
-        |> renderSelectors context.widths
-        |> renderSelectors context.heights
-        |> renderSelectors context.backgrounds
-        |> renderSelectors context.fontColors
-        |> renderSelectors context.fontSizes
-        |> renderSelectors context.fontFamilies
-        |> renderSelectors context.letterSpacings
-        |> renderSelectors context.wordSpacings
+    Dict.foldr
+        (\selector rules acc -> ( selector, VirtualDom.text (selector ++ "{" ++ rules ++ "}") ) :: acc)
+        []
+        context
         |> VirtualDom.keyedNode "style" []
 
 
@@ -862,7 +853,7 @@ render props node =
         ( finalContext, vnode ) =
             renderHelp Single context node
     in
-    VirtualDom.node "div"
+    div
         (classes [ Css.root, Css.any, Css.single ] :: attributes)
         [ VirtualDom.lazy Css.static ()
         , renderContext finalContext

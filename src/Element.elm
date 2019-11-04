@@ -51,6 +51,7 @@ module Element exposing
     , typeface
     , width
     , wordSpacing
+    , wrapped
     )
 
 import Internal.Node as Internal
@@ -89,7 +90,7 @@ col attributes children =
         children
 
 
-row : List (Common { spacing : () } msg) -> List (Element msg) -> Element msg
+row : List (Common { spacing : (), wrapped : () } msg) -> List (Element msg) -> Element msg
 row attributes children =
     Internal.Element Internal.Row
         (List.map unwrapAttribute attributes)
@@ -203,6 +204,13 @@ height : Length -> Attribute { support | height : () } msg
 height length =
     length
         |> Internal.Height
+        |> Attribute
+
+
+wrapped : Int -> Attribute { support | wrapped : () } msg
+wrapped spaceY =
+    spaceY
+        |> Internal.Wrapped
         |> Attribute
 
 
