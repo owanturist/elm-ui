@@ -143,7 +143,7 @@ type alias Config msg =
 
     -- D R E S S
     , background : Maybe Color
-    , opacity : Float
+    , opacity : Maybe Float
 
     -- F O N T S
     , fontColor : Maybe Color
@@ -155,12 +155,12 @@ type alias Config msg =
     , wordSpacing : Maybe Float
 
     -- S P E C I A L   S T A T E
-    , pointer : Bool
+    , pointer : Maybe Bool
     }
 
 
-emptyConfig : Config msg
-emptyConfig =
+initialConfig : Config msg
+initialConfig =
     { attributes = []
 
     -- G E O M E T R Y
@@ -173,7 +173,7 @@ emptyConfig =
 
     -- D R E S S
     , background = Nothing
-    , opacity = 1
+    , opacity = Nothing
 
     -- F O N T S
     , fontColor = Nothing
@@ -185,25 +185,7 @@ emptyConfig =
     , wordSpacing = Nothing
 
     -- S P E C I A L   S T A T E
-    , pointer = False
-    }
-
-
-initialUiConfig : Config msg
-initialUiConfig =
-    { emptyConfig
-        | background = Just (Color 255 255 255 1)
-        , fontColor = Just (Color 0 0 0 1)
-        , fontSize = Just 20
-        , fontFamily = Just [ TypeFace "Open Sans", TypeFace "Helvetica", TypeFace "Verdana", SansSerif ]
-    }
-
-
-initialElementConfig : Config msg
-initialElementConfig =
-    { emptyConfig
-        | width = Just Shrink
-        , height = Just Shrink
+    , pointer = Nothing
     }
 
 
@@ -217,6 +199,11 @@ classes classNames =
     class (String.join " " classNames)
 
 
+isNothing : Maybe x -> Bool
+isNothing =
+    (==) Nothing
+
+
 applyPropToConfig : Prop msg -> Config msg -> Config msg
 applyPropToConfig prop config =
     case prop of
@@ -228,62 +215,126 @@ applyPropToConfig prop config =
 
         -- G E O M E T R Y
         Spacing space ->
-            { config | spacing = Just space }
+            if isNothing config.spacing then
+                { config | spacing = Just space }
+
+            else
+                config
 
         Padding box ->
-            { config | padding = Just box }
+            if isNothing config.padding then
+                { config | padding = Just box }
+
+            else
+                config
 
         Width width ->
-            { config | width = Just width }
+            if isNothing config.width then
+                { config | width = Just width }
+
+            else
+                config
 
         Height height ->
-            { config | height = Just height }
+            if isNothing config.height then
+                { config | height = Just height }
+
+            else
+                config
 
         AlignX alignment ->
-            { config | alignX = Just alignment }
+            if isNothing config.alignX then
+                { config | alignX = Just alignment }
+
+            else
+                config
 
         AlignY alignment ->
-            { config | alignY = Just alignment }
+            if isNothing config.alignY then
+                { config | alignY = Just alignment }
+
+            else
+                config
 
         -- D R E S S
         --
         Background color ->
-            { config | background = Just color }
+            if isNothing config.background then
+                { config | background = Just color }
+
+            else
+                config
 
         Opacity x ->
-            { config | opacity = x }
+            if isNothing config.opacity then
+                { config | opacity = Just x }
+
+            else
+                config
 
         -- F O N T S
         --
         FontColor color ->
-            { config | fontColor = Just color }
+            if isNothing config.fontColor then
+                { config | fontColor = Just color }
+
+            else
+                config
 
         FontSize size ->
-            { config | fontSize = Just size }
+            if isNothing config.fontSize then
+                { config | fontSize = Just size }
+
+            else
+                config
 
         FontFamily family ->
-            { config | fontFamily = Just family }
+            if isNothing config.fontFamily then
+                { config | fontFamily = Just family }
+
+            else
+                config
 
         FontAlign align ->
-            { config | fontAlign = Just align }
+            if isNothing config.fontAlign then
+                { config | fontAlign = Just align }
+
+            else
+                config
 
         FontDecoration decoration ->
-            { config | fontDecoration = Just decoration }
+            if isNothing config.fontDecoration then
+                { config | fontDecoration = Just decoration }
+
+            else
+                config
 
         LetterSpacing spacing ->
-            { config | letterSpacing = Just spacing }
+            if isNothing config.letterSpacing then
+                { config | letterSpacing = Just spacing }
+
+            else
+                config
 
         WordSpacing spacing ->
-            { config | wordSpacing = Just spacing }
+            if isNothing config.wordSpacing then
+                { config | wordSpacing = Just spacing }
+
+            else
+                config
 
         -- S P E C I A L   S T A T E
         Pointer ->
-            { config | pointer = True }
+            if isNothing config.pointer then
+                { config | pointer = Just True }
+
+            else
+                config
 
 
-applyPropsToConfig : List (Prop msg) -> Config msg -> Config msg
-applyPropsToConfig props config =
-    List.foldr applyPropToConfig config props
+applyPropsToConfig : List (Prop msg) -> Config msg
+applyPropsToConfig =
+    List.foldr applyPropToConfig initialConfig
 
 
 type alias Acc msg =
@@ -631,7 +682,7 @@ applyConfigToContext layout config context =
     , Maybe.map applyAlignX config.alignX
     , Maybe.map applyAlignY config.alignY
     , Maybe.map applyBackground config.background
-    , Just (applyOpacity config.opacity)
+    , Maybe.map applyOpacity config.opacity
     , Maybe.map applyFontColor config.fontColor
     , Maybe.map applyFontSize config.fontSize
     , Maybe.map applyFontFamily config.fontFamily
@@ -639,7 +690,7 @@ applyConfigToContext layout config context =
     , Maybe.map applyFontDecoration config.fontDecoration
     , Maybe.map applyLetterSpacing config.letterSpacing
     , Maybe.map applyWordSpacing config.wordSpacing
-    , Just (applyPointer config.pointer)
+    , Maybe.map applyPointer config.pointer
     ]
         |> List.foldr applyConfigToContextFn ( context, config.attributes )
 
@@ -738,7 +789,7 @@ renderElement : Layout -> List (Prop msg) -> List (Node msg) -> Layout -> Contex
 renderElement layout props nodes parent context =
     let
         config =
-            applyPropsToConfig props initialElementConfig
+            applyPropsToConfig (Width Shrink :: Height Shrink :: props)
 
         ( nextContext, attributes ) =
             applyConfigToContext layout config context
@@ -801,7 +852,12 @@ render : List (Prop msg) -> Node msg -> VirtualDom.Node msg
 render props node =
     let
         config =
-            applyPropsToConfig props initialUiConfig
+            Background (Color 255 255 255 1)
+                :: FontColor (Color 0 0 0 1)
+                :: FontSize 20
+                :: FontFamily [ TypeFace "Open Sans", TypeFace "Helvetica", TypeFace "Verdana", SansSerif ]
+                :: props
+                |> applyPropsToConfig
 
         ( context, attributes ) =
             applyConfigToContext Single config initialContext
