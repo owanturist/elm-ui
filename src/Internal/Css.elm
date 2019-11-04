@@ -703,14 +703,14 @@ padding t r b l =
 
 widthPortion : Int -> ( String, String )
 widthPortion n =
-    ( "wp-" ++ int n
+    ( widthFillPortion ++ "-" ++ int n
     , rule "flex-grow" (String.fromInt (100000 * n))
     )
 
 
 widthPx : Int -> ( String, String )
 widthPx x =
-    ( "wx-" ++ int x
+    ( widthExact ++ "-" ++ int x
     , rule "width" (px x)
     )
 
@@ -731,14 +731,14 @@ widthMax x =
 
 heightPortion : Int -> ( String, String )
 heightPortion n =
-    ( "hp-" ++ int n
+    ( heightFillPortion ++ "-" ++ int n
     , rule "flex-grow" (String.fromInt (100000 * n))
     )
 
 
 heightPx : Int -> ( String, String )
 heightPx x =
-    ( "hx-" ++ int x
+    ( heightExact ++ "-" ++ int x
     , rule "height" (px x)
     )
 
