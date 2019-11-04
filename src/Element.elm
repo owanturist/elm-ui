@@ -53,7 +53,6 @@ module Element exposing
     , wordSpacing
     )
 
-import Internal.Color as Color
 import Internal.Node as Internal
 import VirtualDom
 
@@ -213,10 +212,10 @@ height length =
 
 paddings : Int -> Int -> Int -> Int -> Attribute { support | padding : () } msg
 paddings t r b l =
-    { top = max 0 t
-    , right = max 0 r
-    , bottom = max 0 b
-    , left = max 0 l
+    { t = max 0 t
+    , r = max 0 r
+    , b = max 0 b
+    , l = max 0 l
     }
         |> Internal.Padding
         |> Attribute
@@ -366,29 +365,34 @@ scrollbars =
 -- C O L O R
 
 
-type alias Color =
-    Color.Color
+type Color
+    = Color Internal.Color
 
 
 rgb : Int -> Int -> Int -> Color
 rgb r g b =
-    Color.Rgba r g b 1
+    rgba r g b 1
 
 
-rgba : Int -> Int -> Int -> Int -> Color
-rgba =
-    Color.Rgba
+rgba : Int -> Int -> Int -> Float -> Color
+rgba r g b a =
+    { r = clamp 0 255 r
+    , g = clamp 0 255 g
+    , b = clamp 0 255 b
+    , a = clamp 0 1 a
+    }
+        |> Color
 
 
 background : Color -> Attribute { support | background : () } msg
-background clr =
+background (Color clr) =
     clr
         |> Internal.Background
         |> Attribute
 
 
 color : Color -> Attribute { support | color : () } msg
-color clr =
+color (Color clr) =
     clr
         |> Internal.FontColor
         |> Attribute

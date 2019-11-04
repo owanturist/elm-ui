@@ -1,4 +1,810 @@
-module Internal.Static exposing (css)
+module Internal.Css exposing
+    ( alignBottom
+    , alignCenterX
+    , alignCenterY
+    , alignContainerBottom
+    , alignContainerCenterX
+    , alignContainerCenterY
+    , alignContainerRight
+    , alignLeft
+    , alignRight
+    , alignTop
+    , alignedHorizontally
+    , alignedVertically
+    , any
+    , backgroundColor
+    , col
+    , container
+    , contentCenterY
+    , contentLeft
+    , contentTop
+    , cursorPointer
+    , dot
+    , fontColor
+    , fontFamily
+    , fontSize
+    , heightContent
+    , heightExact
+    , heightFill
+    , heightFillPortion
+    , heightMax
+    , heightMin
+    , heightPortion
+    , heightPx
+    , letterSpacing
+    , opacity
+    , padding
+    , root
+    , row
+    , single
+    , spaceEvenly
+    , spacingCol
+    , spacingRow
+    , static
+    , text
+    , textCenter
+    , textJustify
+    , textLeft
+    , textRight
+    , widthContent
+    , widthExact
+    , widthFill
+    , widthFillPortion
+    , widthMax
+    , widthMin
+    , widthPortion
+    , widthPx
+    , wordSpacing
+    )
+
+import Murmur3
+import VirtualDom
+
+
+dot : String -> String
+dot =
+    (++) "."
+
+
+
+-- I N T E R N A L   H E L P E R S
+
+
+px : Int -> String
+px x =
+    String.fromInt x ++ "px"
+
+
+pxf : Float -> String
+pxf x =
+    String.fromFloat x ++ "px"
+
+
+float : Float -> String
+float =
+    String.replace "." "" << String.fromFloat
+
+
+int : Int -> String
+int =
+    String.fromInt
+
+
+rgba : Int -> Int -> Int -> Float -> String
+rgba r g b a =
+    "rgba(" ++ String.join "," (List.map String.fromInt [ r, g, b ]) ++ "," ++ String.fromFloat a ++ ")"
+
+
+rule : String -> String -> String
+rule prop val =
+    prop ++ ":" ++ val ++ ";"
+
+
+hash : String -> Int
+hash =
+    Murmur3.hashString 0
+
+
+
+-- E L E M E N T S
+
+
+any : String
+any =
+    "s"
+
+
+root : String
+root =
+    "ui"
+
+
+single : String
+single =
+    "e"
+
+
+row : String
+row =
+    "r"
+
+
+col : String
+col =
+    "c"
+
+
+page : String
+page =
+    "pg"
+
+
+paragraph : String
+paragraph =
+    "p"
+
+
+text : String
+text =
+    "t"
+
+
+grid : String
+grid =
+    "g"
+
+
+imageContainer : String
+imageContainer =
+    "ic"
+
+
+wrapped : String
+wrapped =
+    "wrp"
+
+
+link : String
+link =
+    "lnk"
+
+
+
+-- W I D T H / H E I G H T
+
+
+widthFill : String
+widthFill =
+    "wf"
+
+
+widthContent : String
+widthContent =
+    "wc"
+
+
+widthExact : String
+widthExact =
+    "we"
+
+
+widthFillPortion : String
+widthFillPortion =
+    "wfp"
+
+
+heightFill : String
+heightFill =
+    "hf"
+
+
+heightContent : String
+heightContent =
+    "hc"
+
+
+heightExact : String
+heightExact =
+    "he"
+
+
+heightFillPortion : String
+heightFillPortion =
+    "hfp"
+
+
+seButton : String
+seButton =
+    "sbt"
+
+
+
+-- N E A R B Y   E L E M E N T S
+
+
+nearby : String
+nearby =
+    "nb"
+
+
+above : String
+above =
+    "a"
+
+
+below : String
+below =
+    "b"
+
+
+onRight : String
+onRight =
+    "or"
+
+
+onLeft : String
+onLeft =
+    "ol"
+
+
+inFront : String
+inFront =
+    "fr"
+
+
+behind : String
+behind =
+    "bh"
+
+
+hasBehind : String
+hasBehind =
+    "hbh"
+
+
+
+-- A L I G N M E N T S
+
+
+alignTop : String
+alignTop =
+    "at"
+
+
+alignBottom : String
+alignBottom =
+    "ab"
+
+
+alignRight : String
+alignRight =
+    "ar"
+
+
+alignLeft : String
+alignLeft =
+    "al"
+
+
+alignCenterX : String
+alignCenterX =
+    "cx"
+
+
+alignCenterY : String
+alignCenterY =
+    "cy"
+
+
+alignedHorizontally : String
+alignedHorizontally =
+    "ah"
+
+
+alignedVertically : String
+alignedVertically =
+    "av"
+
+
+
+-- S P A C E   E V E N L Y
+
+
+spaceEvenly : String
+spaceEvenly =
+    "sev"
+
+
+container : String
+container =
+    "ctr"
+
+
+alignContainerRight : String
+alignContainerRight =
+    "acr"
+
+
+alignContainerBottom : String
+alignContainerBottom =
+    "acb"
+
+
+alignContainerCenterX : String
+alignContainerCenterX =
+    "accx"
+
+
+alignContainerCenterY : String
+alignContainerCenterY =
+    "accy"
+
+
+
+-- C O N T E N T   A L I G N M E N T S
+
+
+contentTop : String
+contentTop =
+    "ct"
+
+
+contentBottom : String
+contentBottom =
+    "cb"
+
+
+contentRight : String
+contentRight =
+    "cr"
+
+
+contentLeft : String
+contentLeft =
+    "cl"
+
+
+contentCenterX : String
+contentCenterX =
+    "ccx"
+
+
+contentCenterY : String
+contentCenterY =
+    "ccy"
+
+
+
+-- S E L E C T I O N
+
+
+noTextSelection : String
+noTextSelection =
+    "notxt"
+
+
+cursorPointer : String
+cursorPointer =
+    "cptr"
+
+
+cursorText : String
+cursorText =
+    "ctxt"
+
+
+
+-- P O I N T E R   E V E N T S
+
+
+passPointerEvents : String
+passPointerEvents =
+    "ppe"
+
+
+capturePointerEvents : String
+capturePointerEvents =
+    "cpe"
+
+
+transparent : String
+transparent =
+    "clr"
+
+
+opaque : String
+opaque =
+    "oq"
+
+
+overflowHidden : String
+overflowHidden =
+    "oh"
+
+
+
+-- S P E C I A L   S T A T E   C L A S S E S
+
+
+hover : String
+hover =
+    "hv"
+
+
+focus : String
+focus =
+    "fcs"
+
+
+focusedWithin : String
+focusedWithin =
+    "focus-within"
+
+
+active : String
+active =
+    "atv"
+
+
+
+-- S C R O L L B A R S
+
+
+scrollbars : String
+scrollbars =
+    "sb"
+
+
+scrollbarsX : String
+scrollbarsX =
+    "sbx"
+
+
+scrollbarsY : String
+scrollbarsY =
+    "sby"
+
+
+clip : String
+clip =
+    "cp"
+
+
+clipX : String
+clipX =
+    "cpx"
+
+
+clipY : String
+clipY =
+    "cpy"
+
+
+
+-- B O R D E R S
+
+
+borderNone : String
+borderNone =
+    "bn"
+
+
+borderDashed : String
+borderDashed =
+    "bd"
+
+
+borderDotted : String
+borderDotted =
+    "bdt"
+
+
+borderSolid : String
+borderSolid =
+    "bs"
+
+
+
+-- T E X T   W E I G H T
+
+
+sizeByCapital : String
+sizeByCapital =
+    "cap"
+
+
+fullSize : String
+fullSize =
+    "fs"
+
+
+textThin : String
+textThin =
+    "w1"
+
+
+textExtraLight : String
+textExtraLight =
+    "w2"
+
+
+textLight : String
+textLight =
+    "w3"
+
+
+textNormalWeight : String
+textNormalWeight =
+    "w4"
+
+
+textMedium : String
+textMedium =
+    "w5"
+
+
+textSemiBold : String
+textSemiBold =
+    "w6"
+
+
+bold : String
+bold =
+    "w7"
+
+
+textExtraBold : String
+textExtraBold =
+    "w8"
+
+
+textHeavy : String
+textHeavy =
+    "w9"
+
+
+italic : String
+italic =
+    "i"
+
+
+strike : String
+strike =
+    "sk"
+
+
+underline : String
+underline =
+    "u"
+
+
+textUnitalicized : String
+textUnitalicized =
+    "tun"
+
+
+
+-- T E X T   A L I G N M E N T
+
+
+textJustify : String
+textJustify =
+    "tj"
+
+
+textJustifyAll : String
+textJustifyAll =
+    "tja"
+
+
+textCenter : String
+textCenter =
+    "tc"
+
+
+textRight : String
+textRight =
+    "tr"
+
+
+textLeft : String
+textLeft =
+    "tl"
+
+
+transition : String
+transition =
+    "ts"
+
+
+
+-- I N P U T   T E X T
+
+
+inputText : String
+inputText =
+    "it"
+
+
+inputMultiline : String
+inputMultiline =
+    "iml"
+
+
+inputMultilineParent : String
+inputMultilineParent =
+    "imlp"
+
+
+inputMultilineFiller : String
+inputMultilineFiller =
+    "imlf"
+
+
+inputMultilineWrapper : String
+inputMultilineWrapper =
+    "implw"
+
+
+
+-- D Y N A M I C   C S S
+
+
+spacingRow : Int -> ( String, String )
+spacingRow space =
+    ( "s-" ++ int space
+    , rule "margin-left" (px space)
+    )
+
+
+spacingCol : Int -> ( String, String )
+spacingCol space =
+    ( "s-" ++ int space
+    , rule "margin-top" (px space)
+    )
+
+
+padding : Int -> Int -> Int -> Int -> ( String, String )
+padding t r b l =
+    let
+        fragments =
+            if l /= r then
+                [ t, r, b, l ]
+
+            else if b /= t then
+                [ t, r, b ]
+
+            else if r /= t then
+                [ t, r ]
+
+            else
+                [ t ]
+    in
+    ( String.join "-" ("p" :: List.map int fragments)
+    , rule "padding" (String.join " " (List.map px fragments))
+    )
+
+
+widthPortion : Int -> ( String, String )
+widthPortion n =
+    ( "wp-" ++ int n
+    , rule "flex-grow" (String.fromInt (100000 * n))
+    )
+
+
+widthPx : Int -> ( String, String )
+widthPx x =
+    ( "wx-" ++ int x
+    , rule "width" (px x)
+    )
+
+
+widthMin : Int -> ( String, String )
+widthMin x =
+    ( "wmn-" ++ int x
+    , rule "min-width" (px x)
+    )
+
+
+widthMax : Int -> ( String, String )
+widthMax x =
+    ( "wmx-" ++ int x
+    , rule "max-width" (px x)
+    )
+
+
+heightPortion : Int -> ( String, String )
+heightPortion n =
+    ( "hp-" ++ int n
+    , rule "flex-grow" (String.fromInt (100000 * n))
+    )
+
+
+heightPx : Int -> ( String, String )
+heightPx x =
+    ( "hx-" ++ int x
+    , rule "height" (px x)
+    )
+
+
+heightMin : Int -> ( String, String )
+heightMin x =
+    ( "hmn-" ++ int x
+    , rule "min-height" (px x)
+    )
+
+
+heightMax : Int -> ( String, String )
+heightMax x =
+    ( "hmx-" ++ int x
+    , rule "max-height" (px x)
+    )
+
+
+backgroundColor : Int -> Int -> Int -> Float -> ( String, String )
+backgroundColor r g b a =
+    ( String.join "-" [ "bc", int r, int g, int b, float a ]
+    , rule "background-color" (rgba r g b a)
+    )
+
+
+opacity : Float -> ( String, String )
+opacity x =
+    ( "o-" ++ float x
+    , rule "opacity" (String.fromFloat x)
+    )
+
+
+fontColor : Int -> Int -> Int -> Float -> ( String, String )
+fontColor r g b a =
+    ( String.join "-" [ "fc", int r, int g, int b, float a ]
+    , rule "color" (rgba r g b a)
+    )
+
+
+fontSize : Int -> ( String, String )
+fontSize size =
+    ( "fs-" ++ int size
+    , rule "font-size" (px size)
+    )
+
+
+fontFamily : List String -> ( String, String )
+fontFamily fonts =
+    ( fonts
+        |> List.map String.toLower
+        |> String.concat
+        |> hash
+        |> String.fromInt
+        |> (++) "ff-"
+    , String.concat
+        [ rule "font-family" (String.join "," fonts)
+        , rule "font-variant" "normal"
+        ]
+    )
+
+
+letterSpacing : Float -> ( String, String )
+letterSpacing space =
+    ( "ls-" ++ float space
+    , rule "letter-spacing" (pxf space)
+    )
+
+
+wordSpacing : Float -> ( String, String )
+wordSpacing space =
+    ( "ws-" ++ float space
+    , rule "word-spacing" (pxf space)
+    )
+
+
+
+-- S T A T I C   C S S
+
+
+static : () -> VirtualDom.Node msg
+static () =
+    VirtualDom.node "style" [] [ VirtualDom.text css ]
 
 
 css : String
