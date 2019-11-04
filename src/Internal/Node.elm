@@ -666,33 +666,30 @@ applyPointer x ( context, attributes ) =
     )
 
 
-applyConfigToContextFn : Maybe (Acc msg -> Acc msg) -> Acc msg -> Acc msg
-applyConfigToContextFn fn acc =
-    fn
-        |> Maybe.map ((|>) acc)
-        |> Maybe.withDefault acc
+applyOptional : (x -> Acc msg -> Acc msg) -> Maybe x -> Acc msg -> Acc msg
+applyOptional fn x =
+    Maybe.withDefault identity (Maybe.map fn x)
 
 
 applyConfigToContext : Layout -> Config msg -> Context -> Acc msg
 applyConfigToContext layout config context =
-    [ Just (applySpacing layout config.spacing)
-    , Maybe.map applyPadding config.padding
-    , Maybe.map applyWidth config.width
-    , Maybe.map applyHeight config.height
-    , Maybe.map applyAlignX config.alignX
-    , Maybe.map applyAlignY config.alignY
-    , Maybe.map applyBackground config.background
-    , Maybe.map applyOpacity config.opacity
-    , Maybe.map applyFontColor config.fontColor
-    , Maybe.map applyFontSize config.fontSize
-    , Maybe.map applyFontFamily config.fontFamily
-    , Maybe.map applyFontAlign config.fontAlign
-    , Maybe.map applyFontDecoration config.fontDecoration
-    , Maybe.map applyLetterSpacing config.letterSpacing
-    , Maybe.map applyWordSpacing config.wordSpacing
-    , Maybe.map applyPointer config.pointer
-    ]
-        |> List.foldr applyConfigToContextFn ( context, config.attributes )
+    ( context, config.attributes )
+        |> applySpacing layout config.spacing
+        |> applyOptional applyPadding config.padding
+        |> applyOptional applyWidth config.width
+        |> applyOptional applyHeight config.height
+        |> applyOptional applyAlignX config.alignX
+        |> applyOptional applyAlignY config.alignY
+        |> applyOptional applyBackground config.background
+        |> applyOptional applyOpacity config.opacity
+        |> applyOptional applyFontColor config.fontColor
+        |> applyOptional applyFontSize config.fontSize
+        |> applyOptional applyFontFamily config.fontFamily
+        |> applyOptional applyFontAlign config.fontAlign
+        |> applyOptional applyFontDecoration config.fontDecoration
+        |> applyOptional applyLetterSpacing config.letterSpacing
+        |> applyOptional applyWordSpacing config.wordSpacing
+        |> applyOptional applyPointer config.pointer
 
 
 empty : VirtualDom.Node msg
