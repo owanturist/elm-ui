@@ -54,6 +54,7 @@ type Font
 type Prop msg
     = Attribute (VirtualDom.Attribute msg)
     | Batch (List (Prop msg))
+    | Explain
       -- G E O M E T R Y
     | Spacing Length
     | Wrapped Length
@@ -106,6 +107,7 @@ initialContext =
 
 type alias Config msg =
     { attributes : List (VirtualDom.Attribute msg)
+    , explain : Bool
 
     -- G E O M E T R Y
     , spacing : Maybe Length
@@ -140,6 +142,7 @@ type alias Config msg =
 initialConfig : Config msg
 initialConfig =
     { attributes = []
+    , explain = False
 
     -- G E O M E T R Y
     , spacing = Nothing
@@ -199,6 +202,9 @@ applyPropToConfig prop config =
 
         Batch props ->
             List.foldr applyPropToConfig config props
+
+        Explain ->
+            { config | explain = True }
 
         -- G E O M E T R Y
         Spacing space ->
@@ -348,18 +354,29 @@ applyPropsToConfig =
     List.foldr applyPropToConfig initialConfig
 
 
-type alias Acc msg =
+type alias Setup msg =
     ( Context, List (VirtualDom.Attribute msg) )
 
 
-applyEvenlySpacing : Acc msg -> Acc msg
+applyExpain : Bool -> Setup msg -> Setup msg
+applyExpain explain (( context, attributes ) as acc) =
+    if explain then
+        ( context
+        , class Css.explain :: attributes
+        )
+
+    else
+        acc
+
+
+applyEvenlySpacing : Setup msg -> Setup msg
 applyEvenlySpacing ( context, attributes ) =
     ( context
     , class Css.spaceEvenly :: attributes
     )
 
 
-applyColPxSpacing : Int -> Acc msg -> Acc msg
+applyColPxSpacing : Int -> Setup msg -> Setup msg
 applyColPxSpacing spaceY ( context, attributes ) =
     let
         ( className, css ) =
@@ -373,7 +390,7 @@ applyColPxSpacing spaceY ( context, attributes ) =
     )
 
 
-applyRowPxSpacing : Int -> Acc msg -> Acc msg
+applyRowPxSpacing : Int -> Setup msg -> Setup msg
 applyRowPxSpacing spaceX ( context, attributes ) =
     let
         ( className, css ) =
@@ -387,7 +404,7 @@ applyRowPxSpacing spaceX ( context, attributes ) =
     )
 
 
-applyWrappedRowSpacing : Int -> Maybe Int -> Acc msg -> Acc msg
+applyWrappedRowSpacing : Int -> Maybe Int -> Setup msg -> Setup msg
 applyWrappedRowSpacing spaceX maybeSpaceY ( context, attributes ) =
     let
         ( className, parentCss, childCss ) =
@@ -419,7 +436,7 @@ Possible cases:
   - Col + spacing evenly
 
 -}
-applyColSpacing : Length -> Acc msg -> Acc msg
+applyColSpacing : Length -> Setup msg -> Setup msg
 applyColSpacing lengthY acc =
     case lengthY of
         Px 0 ->
@@ -441,7 +458,7 @@ Possible cases:
   - Row + spacing evenly
 
 -}
-applyRowSpacing : Length -> Acc msg -> Acc msg
+applyRowSpacing : Length -> Setup msg -> Setup msg
 applyRowSpacing lengthX acc =
     case lengthX of
         Px 0 ->
@@ -463,7 +480,7 @@ Possible cases:
   - wrapped Row + spacing evenly
 
 -}
-applyWrappedSpacing : Length -> Acc msg -> Acc msg
+applyWrappedSpacing : Length -> Setup msg -> Setup msg
 applyWrappedSpacing lengthY acc =
     case lengthY of
         Px spaceY ->
@@ -484,7 +501,7 @@ Possible cases:
   - Row + evenly - wrapped Row evenly
 
 -}
-applyBothRowsSpacing : Length -> Length -> Acc msg -> Acc msg
+applyBothRowsSpacing : Length -> Length -> Setup msg -> Setup msg
 applyBothRowsSpacing lengthX lengthY acc =
     case ( lengthX, lengthY ) of
         ( Px spaceX, Px spaceY ) ->
@@ -503,7 +520,7 @@ applyBothRowsSpacing lengthX lengthY acc =
             applyEvenlySpacing acc
 
 
-applySpacing : Layout -> Maybe Length -> Maybe Length -> Acc msg -> Acc msg
+applySpacing : Layout -> Maybe Length -> Maybe Length -> Setup msg -> Setup msg
 applySpacing layout spacing wrapped acc =
     case ( layout, spacing, wrapped ) of
         -- bypass for Single
@@ -526,7 +543,7 @@ applySpacing layout spacing wrapped acc =
             acc
 
 
-applyPadding : Box -> Acc msg -> Acc msg
+applyPadding : Box -> Setup msg -> Setup msg
 applyPadding { t, r, b, l } ( context, attributes ) =
     let
         ( className, css ) =
@@ -537,7 +554,7 @@ applyPadding { t, r, b, l } ( context, attributes ) =
     )
 
 
-applyWidth : Length -> Acc msg -> Acc msg
+applyWidth : Length -> Setup msg -> Setup msg
 applyWidth length ( context, attributes ) =
     case length of
         Shrink ->
@@ -589,7 +606,7 @@ applyWidth length ( context, attributes ) =
                 )
 
 
-applyHeight : Length -> Acc msg -> Acc msg
+applyHeight : Length -> Setup msg -> Setup msg
 applyHeight length ( context, attributes ) =
     case length of
         Shrink ->
@@ -641,7 +658,7 @@ applyHeight length ( context, attributes ) =
                 )
 
 
-applyAlignX : Alignment -> Acc msg -> Acc msg
+applyAlignX : Alignment -> Setup msg -> Setup msg
 applyAlignX alignment ( context, attributes ) =
     ( context
     , case alignment of
@@ -659,7 +676,7 @@ applyAlignX alignment ( context, attributes ) =
     )
 
 
-applyAlignY : Alignment -> Acc msg -> Acc msg
+applyAlignY : Alignment -> Setup msg -> Setup msg
 applyAlignY alignment ( context, attributes ) =
     ( context
     , case alignment of
@@ -677,7 +694,7 @@ applyAlignY alignment ( context, attributes ) =
     )
 
 
-applyBackground : Color -> Acc msg -> Acc msg
+applyBackground : Color -> Setup msg -> Setup msg
 applyBackground { r, g, b, a } ( context, attributes ) =
     let
         ( className, css ) =
@@ -688,7 +705,7 @@ applyBackground { r, g, b, a } ( context, attributes ) =
     )
 
 
-applyOpacity : Float -> Acc msg -> Acc msg
+applyOpacity : Float -> Setup msg -> Setup msg
 applyOpacity x ( context, attributes ) =
     if x == 1 then
         ( context, attributes )
@@ -703,7 +720,7 @@ applyOpacity x ( context, attributes ) =
         )
 
 
-applyTransform : Maybe ( Int, Int ) -> Maybe Float -> Maybe Float -> Acc msg -> Acc msg
+applyTransform : Maybe ( Int, Int ) -> Maybe Float -> Maybe Float -> Setup msg -> Setup msg
 applyTransform coords n deg ( context, attributes ) =
     case Css.transform coords n deg of
         Nothing ->
@@ -715,7 +732,7 @@ applyTransform coords n deg ( context, attributes ) =
             )
 
 
-applyFontColor : Color -> Acc msg -> Acc msg
+applyFontColor : Color -> Setup msg -> Setup msg
 applyFontColor { r, g, b, a } ( context, attributes ) =
     let
         ( className, css ) =
@@ -726,7 +743,7 @@ applyFontColor { r, g, b, a } ( context, attributes ) =
     )
 
 
-applyFontSize : Int -> Acc msg -> Acc msg
+applyFontSize : Int -> Setup msg -> Setup msg
 applyFontSize size ( context, attributes ) =
     let
         ( className, css ) =
@@ -753,7 +770,7 @@ fontToString font =
             "\"" ++ name ++ "\""
 
 
-applyFontFamily : List Font -> Acc msg -> Acc msg
+applyFontFamily : List Font -> Setup msg -> Setup msg
 applyFontFamily family ( context, attributes ) =
     let
         ( className, css ) =
@@ -764,7 +781,7 @@ applyFontFamily family ( context, attributes ) =
     )
 
 
-applyFontAlign : Alignment -> Acc msg -> Acc msg
+applyFontAlign : Alignment -> Setup msg -> Setup msg
 applyFontAlign alignment ( context, attributes ) =
     ( context
     , case alignment of
@@ -786,14 +803,14 @@ applyFontAlign alignment ( context, attributes ) =
 -- @TODO
 
 
-applyFontDecoration : String -> Acc msg -> Acc msg
+applyFontDecoration : String -> Setup msg -> Setup msg
 applyFontDecoration decoration ( context, attributes ) =
     ( context
     , class ("fd-" ++ decoration) :: attributes
     )
 
 
-applyLetterSpacing : Float -> Acc msg -> Acc msg
+applyLetterSpacing : Float -> Setup msg -> Setup msg
 applyLetterSpacing spacing ( context, attributes ) =
     let
         ( className, css ) =
@@ -804,7 +821,7 @@ applyLetterSpacing spacing ( context, attributes ) =
     )
 
 
-applyWordSpacing : Float -> Acc msg -> Acc msg
+applyWordSpacing : Float -> Setup msg -> Setup msg
 applyWordSpacing spacing ( context, attributes ) =
     let
         ( className, css ) =
@@ -815,25 +832,26 @@ applyWordSpacing spacing ( context, attributes ) =
     )
 
 
-applyPointer : Bool -> Acc msg -> Acc msg
-applyPointer x ( context, attributes ) =
-    ( context
-    , if x then
-        class Css.cursorPointer :: attributes
+applyPointer : Bool -> Setup msg -> Setup msg
+applyPointer x (( context, attributes ) as acc) =
+    if x then
+        ( context
+        , class Css.cursorPointer :: attributes
+        )
 
-      else
-        attributes
-    )
+    else
+        acc
 
 
-applyOptional : (x -> Acc msg -> Acc msg) -> Maybe x -> Acc msg -> Acc msg
+applyOptional : (x -> Setup msg -> Setup msg) -> Maybe x -> Setup msg -> Setup msg
 applyOptional fn x =
     Maybe.withDefault identity (Maybe.map fn x)
 
 
-applyConfigToContext : Layout -> Config msg -> Context -> Acc msg
+applyConfigToContext : Layout -> Config msg -> Context -> Setup msg
 applyConfigToContext layout config context =
     ( context, config.attributes )
+        |> applyExpain config.explain
         |> applySpacing layout config.spacing config.wrapped
         |> applyOptional applyPadding config.padding
         |> applyOptional applyWidth config.width

@@ -20,6 +20,7 @@ module Internal.Css exposing
     , contentTop
     , cursorPointer
     , dot
+    , explain
     , fontColor
     , fontFamily
     , fontSize
@@ -176,6 +177,11 @@ wrapped =
 link : String
 link =
     "lnk"
+
+
+explain : String
+explain =
+    "explain"
 
 
 

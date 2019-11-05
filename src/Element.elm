@@ -19,6 +19,7 @@ module Element exposing
     , el
     , empty
     , evenly
+    , explain
     , fill
     , fontAlign
     , fontFamily
@@ -222,6 +223,20 @@ height : Length { shrink : (), fill : (), portion : (), px : () } -> Attribute {
 height (Length length) =
     length
         |> Internal.Height
+        |> Attribute
+
+
+
+-- D E B U G G I N G
+
+
+type alias Todo =
+    String -> Never
+
+
+explain : Todo -> Attribute support msg
+explain _ =
+    Internal.Explain
         |> Attribute
 
 

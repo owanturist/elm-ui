@@ -146,5 +146,6 @@ moveEl =
         , Element.rotate 45
         , Element.scale 2
         , Element.background (Element.rgb 150 150 150)
+        , Element.explain Debug.todo
         ]
-        empty
+        (text "hi")
