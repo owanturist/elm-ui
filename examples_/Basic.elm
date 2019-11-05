@@ -143,6 +143,9 @@ moveEl =
         [ Element.width (Element.px 50)
         , Element.height (Element.px 100)
         , Element.moveRight 100
+        , Element.scale 2
+        , Element.centerX
+        , Element.centerY
         , Element.moveDown 100
         , Background.color (Element.rgb255 150 150 150)
         , Element.explain Debug.todo

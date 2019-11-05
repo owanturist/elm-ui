@@ -92,7 +92,7 @@ degf x =
 
 float : Float -> String
 float =
-    String.replace "." "" << String.fromFloat
+    String.replace "." "_" << String.fromFloat
 
 
 int : Int -> String
