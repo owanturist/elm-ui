@@ -123,10 +123,10 @@ wrappedRowWrap =
                     << String.fromInt
                 )
             |> row
-                [ Element.wrapped 50
+                [ Element.background (Element.rgb 100 100 100)
+                , Element.wrapped 50
                 , Element.spacing 20
-                , Element.background (Element.rgb 100 100 100)
-                , Element.alpha 0.5
+                , Element.height Element.fill
                 ]
         , el
             [ Element.width Element.fill

@@ -654,15 +654,20 @@ inputMultilineWrapper =
 
 spacingWrappedRow : Int -> Int -> ( String, String, String )
 spacingWrappedRow spaceX spaceY =
+    let
+        halfX =
+            toFloat spaceX / 2
+
+        halfY =
+            toFloat spaceY / 2
+    in
     ( String.join "-" [ "s", int spaceX, int spaceY ]
     , String.concat
-        [ rule "margin-left" (px -spaceX)
-        , rule "margin-top" (px -spaceY)
+        [ rule "margin" (pxf -halfY ++ " " ++ pxf -halfX)
+        , rule "width" ("calc(100% + " ++ px spaceX ++ ")")
+        , rule "height" ("calc(100% + " ++ px spaceY ++ ")")
         ]
-    , String.concat
-        [ rule "margin-left" (px spaceX)
-        , rule "margin-top" (px spaceY)
-        ]
+    , rule "margin" (pxf halfY ++ " " ++ pxf halfX)
     )
 
 

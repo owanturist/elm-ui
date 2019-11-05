@@ -126,10 +126,9 @@ wrappedRowWrap =
                     << String.fromInt
                 )
             |> wrappedRow
-                [ Element.spacing 20
-                , Background.color (Element.rgb255 100 100 100)
-                , Element.alpha 0.5
-                , Element.alignBottom
+                [ Background.color (Element.rgb255 100 100 100)
+                , Element.spacingXY 20 50
+                , Element.height Element.fill
                 ]
         , el
             [ Element.width Element.fill
