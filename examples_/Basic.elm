@@ -2,7 +2,7 @@ module Main exposing (main)
 
 {-| -}
 
-import Element exposing (column, el, link, none, row, text, wrappedRow)
+import Element exposing (column, download, downloadAs, el, link, newTabLink, none, row, text, wrappedRow)
 import Element.Background as Background
 import Element.Font as Font
 
@@ -174,13 +174,14 @@ linkEl =
         [ Element.width Element.fill
         , Element.height Element.fill
         ]
-        [ link
+        [ downloadAs
             [ Element.width (Element.px 200)
             , Element.height (Element.px 100)
             , Element.explain Debug.todo
             , Element.alignBottom
             ]
-            { url = "https://google.com"
+            { url = "/"
+            , filename = "tests"
             , label =
                 row []
                     [ text "link"

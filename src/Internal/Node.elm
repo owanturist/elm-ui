@@ -5,6 +5,7 @@ module Internal.Node exposing
     , Font(..)
     , Layout(..)
     , Length(..)
+    , Link(..)
     , Node(..)
     , Overflow(..)
     , Prop(..)
@@ -36,6 +37,12 @@ type alias Box =
 type Overflow
     = Clip
     | Scroll
+
+
+type Link
+    = SameTabLink String
+    | NewTabLink String
+    | DownloadFile String String
 
 
 type Node msg
@@ -87,7 +94,7 @@ type Prop msg
     | WordSpacing Float
       -- S P E C I A L   S T A T E
     | Pointer
-    | Url String
+    | Url Link
 
 
 type Length
@@ -147,7 +154,7 @@ type alias Config msg =
 
     -- S P E C I A L   S T A T E
     , pointer : Bool
-    , url : Maybe String
+    , url : Maybe Link
     }
 
 
@@ -1023,18 +1030,37 @@ type alias VNodeConstructor msg =
     ( List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VirtualDom.Node msg, List (VirtualDom.Attribute msg), List (VirtualDom.Node msg) )
 
 
+commonLinkAttributes : String -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Attribute msg)
+commonLinkAttributes url attributes =
+    class "lnk"
+        :: stringProperty "href" url
+        :: stringProperty "rel" "noopener noreferrer"
+        :: attributes
+
+
 initContainer : Config msg -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VNodeConstructor msg
 initContainer config attributes children =
     case config.url of
         Nothing ->
             ( div, attributes, children )
 
-        Just url ->
+        Just (SameTabLink url) ->
             ( VirtualDom.node "a"
-            , class "lnk"
-                :: stringProperty "href" url
-                :: stringProperty "rel" "noopener noreferrer"
-                :: attributes
+            , commonLinkAttributes url attributes
+            , children
+            )
+
+        Just (NewTabLink url) ->
+            ( VirtualDom.node "a"
+            , stringProperty "target" "_blank"
+                :: commonLinkAttributes url attributes
+            , children
+            )
+
+        Just (DownloadFile filename url) ->
+            ( VirtualDom.node "a"
+            , stringProperty "download" filename
+                :: commonLinkAttributes url attributes
             , children
             )
 

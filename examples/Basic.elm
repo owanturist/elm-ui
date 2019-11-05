@@ -171,7 +171,7 @@ linkEl =
         [ Element.width (Element.px 200)
         , Element.height (Element.px 100)
         , Element.explain Debug.todo
-        , Element.link "https://google.com"
+        , Element.link "./Rotation.elm"
         , Element.alignY Element.bottom
         ]
         [ text "hi"

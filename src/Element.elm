@@ -19,6 +19,8 @@ module Element exposing
     , clipY
     , col
     , color
+    , download
+    , downloadAs
     , el
     , empty
     , evenly
@@ -33,6 +35,7 @@ module Element exposing
     , left
     , letterSpacing
     , link
+    , linkNewTab
     , maximum
     , minimum
     , monospace
@@ -112,6 +115,34 @@ row attributes children =
 link : String -> Attribute { support | link : () } msg
 link url =
     url
+        |> Internal.SameTabLink
+        |> Internal.Url
+        |> Attribute
+
+
+linkNewTab : String -> Attribute { support | link : () } msg
+linkNewTab url =
+    url
+        |> Internal.NewTabLink
+        |> Internal.Url
+        |> Attribute
+
+
+download : String -> Attribute { support | link : () } msg
+download url =
+    url
+        |> Internal.DownloadFile ""
+        |> Internal.Url
+        |> Attribute
+
+
+downloadAs :
+    { url : String
+    , filename : String
+    }
+    -> Attribute { support | link : () } msg
+downloadAs { url, filename } =
+    Internal.DownloadFile filename url
         |> Internal.Url
         |> Attribute
 
