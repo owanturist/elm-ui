@@ -8,7 +8,7 @@ import Element.Font as Font
 
 
 main =
-    moveEl
+    clipEl
         |> Element.layout []
 
 
@@ -151,3 +151,19 @@ moveEl =
         , Element.explain Debug.todo
         ]
         (text "hi")
+
+
+clipEl =
+    el
+        [ Element.width (Element.px 150)
+        , Element.height (Element.px 300)
+        ]
+        none
+        |> el
+            [ Element.explain Debug.todo
+            , Element.width (Element.px 100)
+            , Element.height (Element.px 200)
+
+            -- , Element.scrollbars
+            , Element.clip
+            ]

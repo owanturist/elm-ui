@@ -14,6 +14,9 @@ module Element exposing
     , batch
     , bottom
     , center
+    , clip
+    , clipX
+    , clipY
     , col
     , color
     , el
@@ -48,6 +51,9 @@ module Element exposing
     , row
     , sansSerif
     , scale
+    , scroll
+    , scrollX
+    , scrollY
     , serif
     , shrink
     , spacing
@@ -122,6 +128,8 @@ type alias Common support msg =
             , letterSpacing : ()
             , wordSpacing : ()
             , pointer : ()
+            , scroll : ()
+            , clip : ()
         }
         msg
 
@@ -402,12 +410,40 @@ scale n =
 
 clip : Attribute { support | clip : () } msg
 clip =
-    Debug.todo "clip"
+    batch [ clipX, clipY ]
 
 
-scrollbars : Attribute { support | scrollbars : () } msg
-scrollbars =
-    Debug.todo "scrollbars"
+clipX : Attribute { support | clip : () } msg
+clipX =
+    Internal.Clip
+        |> Internal.OverflowX
+        |> Attribute
+
+
+clipY : Attribute { support | clip : () } msg
+clipY =
+    Internal.Clip
+        |> Internal.OverflowY
+        |> Attribute
+
+
+scroll : Attribute { support | scroll : () } msg
+scroll =
+    batch [ scrollX, scrollY ]
+
+
+scrollX : Attribute { support | scroll : () } msg
+scrollX =
+    Internal.Scroll
+        |> Internal.OverflowX
+        |> Attribute
+
+
+scrollY : Attribute { support | scroll : () } msg
+scrollY =
+    Internal.Scroll
+        |> Internal.OverflowY
+        |> Attribute
 
 
 

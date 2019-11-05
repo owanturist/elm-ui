@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    moveEl
+    clipEl
         |> Element.layout []
 
 
@@ -149,3 +149,18 @@ moveEl =
         , Element.align Element.center Element.center
         ]
         (text "hi")
+
+
+clipEl =
+    el
+        [ Element.width (Element.px 150)
+        , Element.height (Element.px 300)
+        ]
+        empty
+        |> el
+            [ Element.explain Debug.todo
+            , Element.width (Element.px 100)
+            , Element.height (Element.px 200)
+            , Element.clipX
+            , Element.scrollY
+            ]

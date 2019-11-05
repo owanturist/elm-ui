@@ -13,6 +13,9 @@ module Internal.Css exposing
     , alignedVertically
     , any
     , backgroundColor
+    , clip
+    , clipX
+    , clipY
     , col
     , container
     , contentCenterY
@@ -37,6 +40,9 @@ module Internal.Css exposing
     , padding
     , root
     , row
+    , scrollbars
+    , scrollbarsX
+    , scrollbarsY
     , single
     , spaceEvenly
     , spacingCol

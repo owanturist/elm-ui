@@ -6,6 +6,7 @@ module Internal.Node exposing
     , Layout(..)
     , Length(..)
     , Node(..)
+    , Overflow(..)
     , Prop(..)
     , render
     )
@@ -30,6 +31,11 @@ type alias Box =
     , b : Int
     , l : Int
     }
+
+
+type Overflow
+    = Clip
+    | Scroll
 
 
 type Node msg
@@ -69,6 +75,8 @@ type Prop msg
     | Move Int Int
     | Scale Float
     | Rotate Float
+    | OverflowX Overflow
+    | OverflowY Overflow
       -- F O N T S
     | FontColor Color
     | FontSize Int
@@ -124,6 +132,8 @@ type alias Config msg =
     , move : Maybe ( Int, Int )
     , scale : Maybe Float
     , rotate : Maybe Float
+    , overflowX : Maybe Overflow
+    , overflowY : Maybe Overflow
 
     -- F O N T S
     , fontColor : Maybe Color
@@ -159,6 +169,8 @@ initialConfig =
     , move = Nothing
     , scale = Nothing
     , rotate = Nothing
+    , overflowX = Nothing
+    , overflowY = Nothing
 
     -- F O N T S
     , fontColor = Nothing
@@ -289,6 +301,20 @@ applyPropToConfig prop config =
         Rotate deg ->
             if isNothing config.rotate then
                 { config | rotate = Just deg }
+
+            else
+                config
+
+        OverflowX overflow ->
+            if isNothing config.overflowX then
+                { config | overflowX = Just overflow }
+
+            else
+                config
+
+        OverflowY overflow ->
+            if isNothing config.overflowY then
+                { config | overflowY = Just overflow }
 
             else
                 config
@@ -732,6 +758,50 @@ applyTransform coords n deg ( context, attributes ) =
             )
 
 
+applyOverflowFor : String -> String -> Overflow -> VirtualDom.Attribute msg
+applyOverflowFor classNameClip classNameScroll overflow =
+    case overflow of
+        Clip ->
+            class classNameClip
+
+        Scroll ->
+            class classNameScroll
+
+
+applyOverflow : Maybe Overflow -> Maybe Overflow -> Setup msg -> Setup msg
+applyOverflow overflowX overflowY (( context, attributes ) as setup) =
+    case ( overflowX, overflowY ) of
+        ( Nothing, Nothing ) ->
+            setup
+
+        ( Just Clip, Just Clip ) ->
+            ( context
+            , class Css.clip :: attributes
+            )
+
+        ( Just Scroll, Just Scroll ) ->
+            ( context
+            , class Css.scrollbars :: attributes
+            )
+
+        ( Nothing, Just y ) ->
+            ( context
+            , applyOverflowFor Css.clipY Css.scrollbarsY y :: attributes
+            )
+
+        ( Just x, Nothing ) ->
+            ( context
+            , applyOverflowFor Css.clipX Css.scrollbarsX x :: attributes
+            )
+
+        ( Just x, Just y ) ->
+            ( context
+            , applyOverflowFor Css.clipX Css.scrollbarsX x
+                :: applyOverflowFor Css.clipY Css.scrollbarsY y
+                :: attributes
+            )
+
+
 applyFontColor : Color -> Setup msg -> Setup msg
 applyFontColor { r, g, b, a } ( context, attributes ) =
     let
@@ -861,6 +931,7 @@ applyConfigToContext layout config context =
         |> applyOptional applyBackground config.background
         |> applyOptional applyOpacity config.opacity
         |> applyTransform config.move config.scale config.rotate
+        |> applyOverflow config.overflowX config.overflowY
         |> applyOptional applyFontColor config.fontColor
         |> applyOptional applyFontSize config.fontSize
         |> applyOptional applyFontFamily config.fontFamily
