@@ -127,7 +127,7 @@ wrappedRowWrap =
                 )
             |> wrappedRow
                 [ Background.color (Element.rgb255 100 100 100)
-                , Element.spacingXY 20 50
+                , Element.spaceEvenly
                 , Element.height Element.fill
                 ]
         , el

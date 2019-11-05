@@ -18,6 +18,7 @@ module Element exposing
     , color
     , el
     , empty
+    , evenly
     , fill
     , fontAlign
     , fontFamily
@@ -159,58 +160,65 @@ none =
 -- S I Z E
 
 
-type alias Length =
-    Internal.Length
+type Length support
+    = Length Internal.Length
 
 
-shrink : Length
+evenly : Length { support | evenly : () }
+evenly =
+    Internal.Shrink
+        |> Length
+
+
+shrink : Length { support | shrink : () }
 shrink =
     Internal.Shrink
+        |> Length
 
 
-fill : Length
+fill : Length { support | fill : () }
 fill =
     Internal.Portion 1
+        |> Length
 
 
-portion : Int -> Length
-portion =
-    Internal.Portion << max 1
+portion : Int -> Length { support | portion : () }
+portion n =
+    max 1 n
+        |> Internal.Portion
+        |> Length
 
 
-px : Int -> Length
-px =
-    Internal.Px << max 0
+px : Int -> Length { support | px : () }
+px x =
+    max 0 x
+        |> Internal.Px
+        |> Length
 
 
-minimum : Int -> Length -> Length
-minimum x =
-    Internal.Minimum (max 0 x)
+minimum : Int -> Length { shrink : (), fill : (), portion : () } -> Length { support | shrink : (), fill : (), portion : () }
+minimum x (Length length) =
+    Internal.Minimum (max 0 x) length
+        |> Length
 
 
-maximum : Int -> Length -> Length
-maximum x =
-    Internal.Maximum (max 0 x)
+maximum : Int -> Length { shrink : (), fill : (), portion : () } -> Length { support | shrink : (), fill : (), portion : () }
+maximum x (Length length) =
+    Internal.Maximum (max 0 x) length
+        |> Length
 
 
-width : Length -> Attribute { support | width : () } msg
-width length =
+width : Length { shrink : (), fill : (), portion : (), px : () } -> Attribute { support | width : () } msg
+width (Length length) =
     length
         |> Internal.Width
         |> Attribute
 
 
-height : Length -> Attribute { support | height : () } msg
-height length =
+height : Length { shrink : (), fill : (), portion : (), px : () } -> Attribute { support | height : () } msg
+height (Length length) =
     length
         |> Internal.Height
-        |> Attribute
-
-
-wrapped : Int -> Attribute { support | wrapped : () } msg
-wrapped spaceY =
-    spaceY
-        |> Internal.Wrapped
         |> Attribute
 
 
@@ -250,10 +258,17 @@ paddingEach pads =
     paddings pads.top pads.right pads.bottom pads.left
 
 
-spacing : Int -> Attribute { support | spacing : () } msg
-spacing space =
+spacing : Length { evenly : (), px : () } -> Attribute { support | spacing : () } msg
+spacing (Length space) =
     space
         |> Internal.Spacing
+        |> Attribute
+
+
+wrapped : Length { evenly : (), px : () } -> Attribute { support | wrapped : () } msg
+wrapped (Length spaceY) =
+    spaceY
+        |> Internal.Wrapped
         |> Attribute
 
 

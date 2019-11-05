@@ -55,13 +55,13 @@ type Prop msg
     = Attribute (VirtualDom.Attribute msg)
     | Batch (List (Prop msg))
       -- G E O M E T R Y
-    | Spacing Int
+    | Spacing Length
+    | Wrapped Length
     | Padding Box
     | Width Length
     | Height Length
     | AlignX Alignment
     | AlignY Alignment
-    | Wrapped Int
       -- D R E S S
     | Background Color
     | Opacity Float
@@ -105,13 +105,13 @@ type alias Config msg =
     { attributes : List (VirtualDom.Attribute msg)
 
     -- G E O M E T R Y
-    , spacing : Maybe Int
+    , spacing : Maybe Length
+    , wrapped : Maybe Length
     , padding : Maybe Box
     , width : Maybe Length
     , height : Maybe Length
     , alignX : Maybe Alignment
     , alignY : Maybe Alignment
-    , wrapped : Maybe Int
 
     -- D R E S S
     , background : Maybe Color
@@ -199,6 +199,13 @@ applyPropToConfig prop config =
             else
                 config
 
+        Wrapped space ->
+            if isNothing config.wrapped then
+                { config | wrapped = Just space }
+
+            else
+                config
+
         Padding box ->
             if isNothing config.padding then
                 { config | padding = Just box }
@@ -230,13 +237,6 @@ applyPropToConfig prop config =
         AlignY alignment ->
             if isNothing config.alignY then
                 { config | alignY = Just alignment }
-
-            else
-                config
-
-        Wrapped space ->
-            if isNothing config.wrapped then
-                { config | wrapped = Just space }
 
             else
                 config
@@ -322,58 +322,178 @@ type alias Acc msg =
     ( Context, List (VirtualDom.Attribute msg) )
 
 
-applySpacing : Layout -> Maybe Int -> Maybe Int -> Acc msg -> Acc msg
-applySpacing layout spacing wrapped ( context, attributes ) =
+applyEvenlySpacing : Acc msg -> Acc msg
+applyEvenlySpacing ( context, attributes ) =
+    ( context
+    , class Css.spaceEvenly :: attributes
+    )
+
+
+applyColPxSpacing : Int -> Acc msg -> Acc msg
+applyColPxSpacing spaceY ( context, attributes ) =
+    let
+        ( className, css ) =
+            Css.spacingCol spaceY
+
+        selector =
+            Css.dot Css.col ++ Css.dot className ++ ">" ++ Css.dot Css.any ++ "+" ++ Css.dot Css.any
+    in
+    ( Dict.insert selector css context
+    , class className :: attributes
+    )
+
+
+applyRowPxSpacing : Int -> Acc msg -> Acc msg
+applyRowPxSpacing spaceX ( context, attributes ) =
+    let
+        ( className, css ) =
+            Css.spacingRow spaceX
+
+        selector =
+            Css.dot Css.row ++ Css.dot className ++ ">" ++ Css.dot Css.any ++ "+" ++ Css.dot Css.any
+    in
+    ( Dict.insert selector css context
+    , class className :: attributes
+    )
+
+
+applyWrappedRowSpacing : Int -> Maybe Int -> Acc msg -> Acc msg
+applyWrappedRowSpacing spaceX maybeSpaceY ( context, attributes ) =
+    let
+        ( className, parentCss, childCss ) =
+            case maybeSpaceY of
+                Nothing ->
+                    Css.spacingWrappedEvenlyRow spaceX
+
+                Just spaceY ->
+                    Css.spacingWrappedPxRow spaceX spaceY
+
+        parentSelector =
+            Css.dot Css.single ++ Css.dot className ++ ">" ++ Css.dot Css.wrapped
+
+        childSelector =
+            parentSelector ++ ">" ++ Css.dot Css.any
+    in
+    ( context
+        |> Dict.insert parentSelector parentCss
+        |> Dict.insert childSelector childCss
+    , class className :: attributes
+    )
+
+
+{-| Makes spacing for Col element. Px 0 is ignored.
+
+Possible cases:
+
+  - Col + spacing px
+  - Col + spacing evenly
+
+-}
+applyColSpacing : Length -> Acc msg -> Acc msg
+applyColSpacing lengthY acc =
+    case lengthY of
+        Px 0 ->
+            acc
+
+        Px spaceY ->
+            applyColPxSpacing spaceY acc
+
+        -- the rest treats as evenly
+        _ ->
+            applyEvenlySpacing acc
+
+
+{-| Makes spacing for Row element. Px 0 is ignored.
+
+Possible cases:
+
+  - Row + spacing px
+  - Row + spacing evenly
+
+-}
+applyRowSpacing : Length -> Acc msg -> Acc msg
+applyRowSpacing lengthX acc =
+    case lengthX of
+        Px 0 ->
+            acc
+
+        Px spaceX ->
+            applyRowPxSpacing spaceX acc
+
+        -- the rest treats as evenly
+        _ ->
+            applyEvenlySpacing acc
+
+
+{-| Makes spacing for wrapped Row element when spacing is unset. Px 0 is ignored.
+
+Possible cases:
+
+  - wrapped Row + spacing px
+  - wrapped Row + spacing evenly
+
+-}
+applyWrappedSpacing : Length -> Acc msg -> Acc msg
+applyWrappedSpacing lengthY acc =
+    case lengthY of
+        Px spaceY ->
+            applyWrappedRowSpacing 0 (Just spaceY) acc
+
+        -- do nothing for evenly in this case
+        _ ->
+            acc
+
+
+{-| Makes spacing for Row element. Px 0 is ignored.
+
+Possible cases:
+
+  - Row + spacing px - wrapped Row spacing px
+  - Row + spacing px - wrapped Row evenly
+  - Row + evenly - wrapped Row spacing px
+  - Row + evenly - wrapped Row evenly
+
+-}
+applyBothRowsSpacing : Length -> Length -> Acc msg -> Acc msg
+applyBothRowsSpacing lengthX lengthY acc =
+    case ( lengthX, lengthY ) of
+        ( Px spaceX, Px spaceY ) ->
+            applyWrappedRowSpacing spaceX (Just spaceY) acc
+
+        ( Px spaceX, _ ) ->
+            applyWrappedRowSpacing spaceX Nothing acc
+
+        ( _, Px spaceY ) ->
+            acc
+                |> applyWrappedRowSpacing 0 (Just spaceY)
+                |> applyEvenlySpacing
+
+        -- the rest treats as evenly
+        _ ->
+            applyEvenlySpacing acc
+
+
+applySpacing : Layout -> Maybe Length -> Maybe Length -> Acc msg -> Acc msg
+applySpacing layout spacing wrapped acc =
     case ( layout, spacing, wrapped ) of
-        ( Row, Just space, Nothing ) ->
-            let
-                ( className, css ) =
-                    Css.spacingRow space
+        -- bypass for Single
+        ( Single, _, _ ) ->
+            acc
 
-                selector =
-                    Css.dot Css.row ++ Css.dot className ++ ">" ++ Css.dot Css.any ++ "+" ++ Css.dot Css.any
-            in
-            ( Dict.insert selector css context
-            , class className :: attributes
-            )
+        ( Col, Just lengthY, _ ) ->
+            applyColSpacing lengthY acc
 
-        ( Row, Just spaceX, Just spaceY ) ->
-            let
-                ( className, parentCss, childCss ) =
-                    Css.spacingWrappedRow spaceX spaceY
+        ( Row, Just lengthX, Nothing ) ->
+            applyRowSpacing lengthX acc
 
-                parentSelector =
-                    Css.dot Css.single ++ Css.dot className ++ ">" ++ Css.dot Css.wrapped
+        ( Row, Nothing, Just lengthY ) ->
+            applyWrappedSpacing lengthY acc
 
-                childSelector =
-                    parentSelector ++ ">" ++ Css.dot Css.any
-            in
-            ( context
-                |> Dict.insert parentSelector parentCss
-                |> Dict.insert childSelector childCss
-            , class className :: attributes
-            )
-
-        ( Col, Just space, _ ) ->
-            let
-                ( className, css ) =
-                    Css.spacingCol space
-
-                selector =
-                    Css.dot Css.col ++ Css.dot className ++ ">" ++ Css.dot Css.any ++ "+" ++ Css.dot Css.any
-            in
-            ( Dict.insert selector css context
-            , class className :: attributes
-            )
+        ( Row, Just lengthX, Just lengthY ) ->
+            applyBothRowsSpacing lengthX lengthY acc
 
         _ ->
-            ( context
-            , if layout == Single then
-                attributes
-
-              else
-                class Css.spaceEvenly :: attributes
-            )
+            acc
 
 
 applyPadding : Box -> Acc msg -> Acc msg

@@ -40,7 +40,8 @@ module Internal.Css exposing
     , spaceEvenly
     , spacingCol
     , spacingRow
-    , spacingWrappedRow
+    , spacingWrappedEvenlyRow
+    , spacingWrappedPxRow
     , static
     , text
     , textCenter
@@ -652,8 +653,23 @@ inputMultilineWrapper =
 -- D Y N A M I C   C S S
 
 
-spacingWrappedRow : Int -> Int -> ( String, String, String )
-spacingWrappedRow spaceX spaceY =
+spacingWrappedEvenlyRow : Int -> ( String, String, String )
+spacingWrappedEvenlyRow spaceX =
+    let
+        halfX =
+            toFloat spaceX / 2
+    in
+    ( String.join "-" [ "sxy", int spaceX, "e" ]
+    , String.concat
+        [ rule "margin" ("0 " ++ pxf -halfX)
+        , rule "width" ("calc(100% + " ++ px spaceX ++ ")")
+        ]
+    , rule "margin" ("0 " ++ pxf halfX)
+    )
+
+
+spacingWrappedPxRow : Int -> Int -> ( String, String, String )
+spacingWrappedPxRow spaceX spaceY =
     let
         halfX =
             toFloat spaceX / 2
@@ -661,11 +677,11 @@ spacingWrappedRow spaceX spaceY =
         halfY =
             toFloat spaceY / 2
     in
-    ( String.join "-" [ "s", int spaceX, int spaceY ]
+    ( String.join "-" [ "sxy", int spaceX, int spaceY ]
     , String.concat
         [ rule "margin" (pxf -halfY ++ " " ++ pxf -halfX)
-        , rule "width" ("calc(100% + " ++ px spaceX ++ ")")
-        , rule "height" ("calc(100% + " ++ px spaceY ++ ")")
+        , rule "width" "auto"
+        , rule "height" "auto"
         ]
     , rule "margin" (pxf halfY ++ " " ++ pxf halfX)
     )
@@ -673,14 +689,14 @@ spacingWrappedRow spaceX spaceY =
 
 spacingRow : Int -> ( String, String )
 spacingRow space =
-    ( "s-" ++ int space
+    ( "sx-" ++ int space
     , rule "margin-left" (px space)
     )
 
 
 spacingCol : Int -> ( String, String )
 spacingCol space =
-    ( "s-" ++ int space
+    ( "sy-" ++ int space
     , rule "margin-top" (px space)
     )
 
@@ -1163,6 +1179,8 @@ body {
 
 .s.wrp {
     flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
 }
 
 .s.notxt {
@@ -1477,7 +1495,8 @@ body {
     align-self: center;
 }
 
-.s.r.sev {
+.s.r.sev,
+.s.e.sev > .wrp {
     justify-content: space-between;
 }
 

@@ -95,14 +95,14 @@ spacing node =
         |> node
             [ Element.width Element.fill
             , Element.height Element.fill
-            , Element.spacing 20
+            , Element.spacing (Element.px 20)
             , Element.background (Element.rgb 100 100 100)
             ]
 
 
 wrappedRowWrap =
     col
-        [ Element.spacing 30
+        [ Element.spacing (Element.px 30)
         , Element.padding 60
         , Element.height (Element.px 500)
         , Element.align Element.center Element.center
@@ -113,7 +113,7 @@ wrappedRowWrap =
             , Element.background (Element.rgb 150 150 150)
             ]
             (text "hi")
-        , List.range 0 10
+        , List.range 0 3
             |> List.map
                 (el
                     [ Element.width (Element.px 100)
@@ -124,9 +124,11 @@ wrappedRowWrap =
                 )
             |> row
                 [ Element.background (Element.rgb 100 100 100)
-                , Element.wrapped 50
-                , Element.spacing 20
-                , Element.height Element.fill
+                , Element.wrapped (Element.px 10)
+                , Element.spacing (Element.px 50)
+                , Element.width (Element.px 500)
+
+                -- , Element.height Element.fill
                 ]
         , el
             [ Element.width Element.fill
