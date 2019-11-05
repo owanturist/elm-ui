@@ -8,7 +8,7 @@ import Element.Font as Font
 
 
 main =
-    wrappedRowWrap
+    moveEl
         |> Element.layout []
 
 
@@ -136,3 +136,16 @@ wrappedRowWrap =
             ]
             (text "by")
         ]
+
+
+moveEl =
+    el
+        [ Element.width (Element.px 50)
+        , Element.height (Element.px 100)
+        , Element.moveRight 10
+        , Element.moveDown 10
+        , Element.rotate (degrees 45)
+        , Element.scale 0.5
+        , Background.color (Element.rgb255 150 150 150)
+        ]
+        none

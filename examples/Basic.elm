@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    wrappedRowWrap
+    moveEl
         |> Element.layout []
 
 
@@ -136,3 +136,15 @@ wrappedRowWrap =
             ]
             (text "by")
         ]
+
+
+moveEl =
+    el
+        [ Element.width (Element.px 50)
+        , Element.height (Element.px 100)
+        , Element.move 100 50
+        , Element.rotate 45
+        , Element.scale 2
+        , Element.background (Element.rgb 150 150 150)
+        ]
+        empty

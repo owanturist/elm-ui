@@ -65,6 +65,9 @@ type Prop msg
       -- D R E S S
     | Background Color
     | Opacity Float
+    | Move Int Int
+    | Scale Float
+    | Rotate Float
       -- F O N T S
     | FontColor Color
     | FontSize Int
@@ -116,6 +119,9 @@ type alias Config msg =
     -- D R E S S
     , background : Maybe Color
     , opacity : Maybe Float
+    , move : Maybe ( Int, Int )
+    , scale : Maybe Float
+    , rotate : Maybe Float
 
     -- F O N T S
     , fontColor : Maybe Color
@@ -147,6 +153,9 @@ initialConfig =
     -- D R E S S
     , background = Nothing
     , opacity = Nothing
+    , move = Nothing
+    , scale = Nothing
+    , rotate = Nothing
 
     -- F O N T S
     , fontColor = Nothing
@@ -250,9 +259,30 @@ applyPropToConfig prop config =
             else
                 config
 
-        Opacity x ->
+        Opacity o ->
             if isNothing config.opacity then
-                { config | opacity = Just x }
+                { config | opacity = Just o }
+
+            else
+                config
+
+        Move x y ->
+            if isNothing config.move then
+                { config | move = Just ( x, y ) }
+
+            else
+                config
+
+        Scale n ->
+            if isNothing config.scale then
+                { config | scale = Just n }
+
+            else
+                config
+
+        Rotate deg ->
+            if isNothing config.rotate then
+                { config | rotate = Just deg }
 
             else
                 config
@@ -673,6 +703,18 @@ applyOpacity x ( context, attributes ) =
         )
 
 
+applyTransform : Maybe ( Int, Int ) -> Maybe Float -> Maybe Float -> Acc msg -> Acc msg
+applyTransform coords n deg ( context, attributes ) =
+    case Css.transform coords n deg of
+        Nothing ->
+            ( context, attributes )
+
+        Just ( className, css ) ->
+            ( Dict.insert (Css.dot className) css context
+            , class className :: attributes
+            )
+
+
 applyFontColor : Color -> Acc msg -> Acc msg
 applyFontColor { r, g, b, a } ( context, attributes ) =
     let
@@ -800,6 +842,7 @@ applyConfigToContext layout config context =
         |> applyOptional applyAlignY config.alignY
         |> applyOptional applyBackground config.background
         |> applyOptional applyOpacity config.opacity
+        |> applyTransform config.move config.scale config.rotate
         |> applyOptional applyFontColor config.fontColor
         |> applyOptional applyFontSize config.fontSize
         |> applyOptional applyFontFamily config.fontFamily

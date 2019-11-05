@@ -31,6 +31,7 @@ module Element exposing
     , maximum
     , minimum
     , monospace
+    , move
     , none
     , padding
     , paddingEach
@@ -42,8 +43,10 @@ module Element exposing
     , rgb
     , rgba
     , right
+    , rotate
     , row
     , sansSerif
+    , scale
     , serif
     , shrink
     , spacing
@@ -357,17 +360,25 @@ alpha x =
 
 move : Int -> Int -> Attribute { support | move : () } msg
 move x y =
-    Debug.todo "move"
+    Internal.Move x y
+        |> Attribute
 
 
 rotate : Float -> Attribute { support | rotate : () } msg
-rotate angle =
-    Debug.todo "rotate"
+rotate deg =
+    let
+        n =
+            floor (deg / 360)
+    in
+    (deg - toFloat (n * 360))
+        |> Internal.Rotate
+        |> Attribute
 
 
 scale : Float -> Attribute { support | scale : () } msg
-scale angle =
-    Debug.todo "scale"
+scale n =
+    Internal.Scale n
+        |> Attribute
 
 
 

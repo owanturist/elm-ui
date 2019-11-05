@@ -48,6 +48,7 @@ module Internal.Css exposing
     , textJustify
     , textLeft
     , textRight
+    , transform
     , widthContent
     , widthExact
     , widthFill
@@ -81,6 +82,11 @@ px x =
 pxf : Float -> String
 pxf x =
     String.fromFloat x ++ "px"
+
+
+degf : Float -> String
+degf x =
+    String.fromFloat x ++ "deg"
 
 
 float : Float -> String
@@ -790,6 +796,56 @@ opacity x =
     ( "o-" ++ float x
     , rule "opacity" (String.fromFloat x)
     )
+
+
+translateXY : Int -> Int -> Maybe String
+translateXY x y =
+    if x == 0 && y == 0 then
+        Nothing
+
+    else
+        Just ("translate3d(" ++ px x ++ "," ++ px y ++ ",0)")
+
+
+scaleN : Float -> Maybe String
+scaleN n =
+    if n == 1 then
+        Nothing
+
+    else
+        Just ("scale3d(" ++ String.fromFloat n ++ "," ++ String.fromFloat n ++ ",1)")
+
+
+rotateDeg : Float -> Maybe String
+rotateDeg angle =
+    if angle == 0 then
+        Nothing
+
+    else
+        Just ("rotate3d(0,0,1," ++ degf angle ++ ")")
+
+
+transform : Maybe ( Int, Int ) -> Maybe Float -> Maybe Float -> Maybe ( String, String )
+transform move scale rotate =
+    let
+        ( x, y ) =
+            Maybe.withDefault ( 0, 0 ) move
+
+        n =
+            Maybe.withDefault 1 scale
+
+        angle =
+            Maybe.withDefault 0 rotate
+    in
+    case List.filterMap identity [ translateXY x y, scaleN n, rotateDeg angle ] of
+        [] ->
+            Nothing
+
+        transforms ->
+            Just
+                ( String.join "-" [ "trf", int x, int y, float n, float angle ]
+                , rule "transform" (String.join " " transforms)
+                )
 
 
 fontColor : Int -> Int -> Int -> Float -> ( String, String )
