@@ -35,6 +35,7 @@ module Internal.Css exposing
     , heightMin
     , heightPortion
     , heightPx
+    , imageContainer
     , letterSpacing
     , opacity
     , padding
@@ -698,8 +699,7 @@ spacingWrappedPxRow spaceX spaceY =
     ( String.join "-" [ "sxy", int spaceX, int spaceY ]
     , String.concat
         [ rule "margin" (pxf -halfY ++ " " ++ pxf -halfX)
-        , rule "width" "auto"
-        , rule "height" "auto"
+        , rule "flex-grow" "0"
         ]
     , rule "margin" (pxf halfY ++ " " ++ pxf halfX)
     )
@@ -997,7 +997,7 @@ input[type=range][orient=vertical] {
     border: 6px solid rgb(174, 121, 15) !important;
 }
 
-.explain>.s {
+.explain>.s.wrp {
     border: 4px dashed rgb(0, 151, 167) !important;
 }
 
@@ -1018,6 +1018,11 @@ body {
 
 .s.e.ic {
     display: block;
+}
+
+.s.e.ic > .s.e {
+    width: inherit;
+    height: inherit;
 }
 
 .s:focus {
@@ -1247,8 +1252,7 @@ body {
 
 .s.wrp {
     flex-wrap: wrap;
-    width: 100%;
-    height: 100%;
+    flex-grow: 1000;
 }
 
 .s.notxt {

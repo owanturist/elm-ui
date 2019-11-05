@@ -2,13 +2,14 @@ module Main exposing (main)
 
 {-| -}
 
-import Element exposing (column, download, downloadAs, el, link, newTabLink, none, row, text, wrappedRow)
+import Element exposing (column, download, downloadAs, el, image, link, newTabLink, none, row, text, wrappedRow)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 
 
 main =
-    linkEl
+    imageEl
         |> Element.layout []
 
 
@@ -189,3 +190,22 @@ linkEl =
                     ]
             }
         ]
+
+
+cat =
+    "https://images2.minutemediacdn.com/image/upload/c_crop,h_1193,w_2121,x_0,y_64/f_auto,q_auto,w_1100/v1565279671/shape/mentalfloss/578211-gettyimages-542930526.jpg"
+
+
+imageEl =
+    image
+        [ Background.color (Element.rgb 0.5 0.5 0.5)
+        , Element.width (Element.px 200)
+        ]
+        { description = "hola"
+        , src = cat
+        }
+        |> List.repeat 10
+        |> wrappedRow
+            [ Element.width Element.fill
+            , Element.spaceEvenly
+            ]

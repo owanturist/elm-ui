@@ -30,6 +30,7 @@ module Element exposing
     , fontFamily
     , fontSize
     , height
+    , image
     , justify
     , layout
     , left
@@ -110,6 +111,19 @@ row attributes children =
     Internal.Element Internal.Row
         (List.map unwrapAttribute attributes)
         children
+
+
+image :
+    List (Common { link : () } msg)
+    ->
+        { description : String
+        , src : String
+        }
+    -> Element msg
+image attributes { description, src } =
+    Internal.Image description
+        src
+        (List.map unwrapAttribute attributes)
 
 
 link : String -> Attribute { support | link : () } msg

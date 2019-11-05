@@ -48,6 +48,7 @@ type Link
 type Node msg
     = Empty
     | Text String
+    | Image String String (List (Prop msg))
     | Element Layout (List (Prop msg)) (List (Node msg))
 
 
@@ -964,6 +965,130 @@ applyConfigToContext layout config context =
         |> applyPointer config.pointer
 
 
+layoutSingleClass : VirtualDom.Attribute msg
+layoutSingleClass =
+    classes [ Css.any, Css.single ]
+
+
+layoutRowClass : VirtualDom.Attribute msg
+layoutRowClass =
+    classes [ Css.any, Css.row, Css.contentLeft, Css.contentCenterY ]
+
+
+layoutColClass : VirtualDom.Attribute msg
+layoutColClass =
+    classes [ Css.any, Css.col, Css.contentLeft, Css.contentTop ]
+
+
+layoutToClass : Layout -> VirtualDom.Attribute msg
+layoutToClass layout =
+    case layout of
+        Single ->
+            layoutSingleClass
+
+        Row ->
+            layoutRowClass
+
+        Col ->
+            layoutColClass
+
+
+type alias Factory msg =
+    ( List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VirtualDom.Node msg, List (VirtualDom.Attribute msg), List (VirtualDom.Node msg) )
+
+
+commonLinkAttributes : String -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Attribute msg)
+commonLinkAttributes url attributes =
+    class "lnk"
+        :: stringProperty "href" url
+        :: stringProperty "rel" "noopener noreferrer"
+        :: attributes
+
+
+renderLink : Maybe Link -> Factory msg -> Factory msg
+renderLink link (( _, attributes, children ) as constructor) =
+    case link of
+        Nothing ->
+            constructor
+
+        Just (SameTabLink url) ->
+            ( VirtualDom.node "a"
+            , commonLinkAttributes url attributes
+            , children
+            )
+
+        Just (NewTabLink url) ->
+            ( VirtualDom.node "a"
+            , stringProperty "target" "_blank"
+                :: commonLinkAttributes url attributes
+            , children
+            )
+
+        Just (DownloadFile filename url) ->
+            ( VirtualDom.node "a"
+            , stringProperty "download" filename
+                :: commonLinkAttributes url attributes
+            , children
+            )
+
+
+renderWrappedRowContainer : Layout -> Maybe Length -> Factory msg -> Factory msg
+renderWrappedRowContainer layout wrapped ( vnode, attributes, children ) =
+    if isNothing wrapped then
+        ( vnode
+        , layoutToClass layout :: attributes
+        , children
+        )
+
+    else
+        ( vnode
+        , layoutSingleClass :: attributes
+        , [ div [ layoutRowClass, class Css.wrapped ] children
+          ]
+        )
+
+
+renderAlignNode : String -> List String -> Factory msg -> Factory msg
+renderAlignNode tag cls ( vnode, attributes, children ) =
+    ( VirtualDom.node tag
+    , [ classes (Css.container :: Css.any :: Css.single :: cls)
+      ]
+    , [ vnode attributes children
+      ]
+    )
+
+
+renderAlignContainer : Layout -> Maybe Alignment -> Maybe Alignment -> Factory msg -> Factory msg
+renderAlignContainer parent alignX alignY constructor =
+    case ( parent, alignX, alignY ) of
+        ( Row, Just Middle, _ ) ->
+            renderAlignNode "s" [ Css.contentCenterY, Css.alignContainerCenterX ] constructor
+
+        ( Row, Just End, _ ) ->
+            renderAlignNode "u" [ Css.contentCenterY, Css.alignContainerRight ] constructor
+
+        ( Col, _, Just Middle ) ->
+            renderAlignNode "s" [ Css.alignContainerCenterY ] constructor
+
+        ( Col, _, Just End ) ->
+            renderAlignNode "u" [ Css.alignContainerBottom ] constructor
+
+        _ ->
+            constructor
+
+
+runFactory : Layout -> Layout -> Config msg -> Factory msg -> VirtualDom.Node msg
+runFactory parent layout config constructor =
+    let
+        ( vnode, attributes, children ) =
+            constructor
+                |> renderLink config.url
+                |> renderWrappedRowContainer layout config.wrapped
+                |> renderAlignContainer parent config.alignX config.alignY
+    in
+    vnode attributes children
+
+
 empty : VirtualDom.Node msg
 empty =
     VirtualDom.text ""
@@ -998,122 +1123,35 @@ renderText txt parent context =
     )
 
 
-layoutSingleClass : VirtualDom.Attribute msg
-layoutSingleClass =
-    classes [ Css.any, Css.single ]
+renderImage : String -> String -> List (Prop msg) -> Layout -> Context -> ( Context, VirtualDom.Node msg )
+renderImage alt src props parent context =
+    let
+        config =
+            applyPropsToConfig props
 
-
-layoutRowClass : VirtualDom.Attribute msg
-layoutRowClass =
-    classes [ Css.any, Css.row, Css.contentLeft, Css.contentCenterY ]
-
-
-layoutColClass : VirtualDom.Attribute msg
-layoutColClass =
-    classes [ Css.any, Css.col, Css.contentLeft, Css.contentTop ]
-
-
-layoutToClass : Layout -> VirtualDom.Attribute msg
-layoutToClass layout =
-    case layout of
-        Single ->
-            layoutSingleClass
-
-        Row ->
-            layoutRowClass
-
-        Col ->
-            layoutColClass
-
-
-type alias VNodeConstructor msg =
-    ( List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VirtualDom.Node msg, List (VirtualDom.Attribute msg), List (VirtualDom.Node msg) )
-
-
-commonLinkAttributes : String -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Attribute msg)
-commonLinkAttributes url attributes =
-    class "lnk"
-        :: stringProperty "href" url
-        :: stringProperty "rel" "noopener noreferrer"
-        :: attributes
-
-
-initContainer : Config msg -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VNodeConstructor msg
-initContainer config attributes children =
-    case config.url of
-        Nothing ->
-            ( div, attributes, children )
-
-        Just (SameTabLink url) ->
-            ( VirtualDom.node "a"
-            , commonLinkAttributes url attributes
-            , children
-            )
-
-        Just (NewTabLink url) ->
-            ( VirtualDom.node "a"
-            , stringProperty "target" "_blank"
-                :: commonLinkAttributes url attributes
-            , children
-            )
-
-        Just (DownloadFile filename url) ->
-            ( VirtualDom.node "a"
-            , stringProperty "download" filename
-                :: commonLinkAttributes url attributes
-            , children
-            )
-
-
-renderWrappedRowContainer : Layout -> Maybe Length -> VNodeConstructor msg -> VNodeConstructor msg
-renderWrappedRowContainer layout wrapped ( vnode, attributes, children ) =
-    if isNothing wrapped then
-        ( vnode
-        , layoutToClass layout :: attributes
-        , children
-        )
-
-    else
-        ( vnode
-        , layoutSingleClass :: attributes
-        , [ div [ layoutRowClass, class Css.wrapped ] children
-          ]
-        )
-
-
-renderAlignNode : String -> List String -> VNodeConstructor msg -> VirtualDom.Node msg
-renderAlignNode tag cls ( vnode, attributes, children ) =
-    VirtualDom.node tag
-        [ classes (Css.container :: Css.any :: Css.single :: cls)
+        ( nextContext, attributes ) =
+            applyConfigToContext Single config context
+    in
+    ( nextContext
+    , ( div
+      , class Css.imageContainer :: attributes
+      , [ VirtualDom.node "img"
+            [ classes [ Css.any, Css.single ]
+            , stringProperty "src" src
+            , stringProperty "alt" alt
+            ]
+            []
         ]
-        [ vnode attributes children
-        ]
-
-
-renderAlignContainer : Layout -> Maybe Alignment -> Maybe Alignment -> VNodeConstructor msg -> VirtualDom.Node msg
-renderAlignContainer parent alignX alignY (( vnode, attributes, children ) as constructor) =
-    case ( parent, alignX, alignY ) of
-        ( Row, Just Middle, _ ) ->
-            renderAlignNode "s" [ Css.contentCenterY, Css.alignContainerCenterX ] constructor
-
-        ( Row, Just End, _ ) ->
-            renderAlignNode "u" [ Css.contentCenterY, Css.alignContainerRight ] constructor
-
-        ( Col, _, Just Middle ) ->
-            renderAlignNode "s" [ Css.alignContainerCenterY ] constructor
-
-        ( Col, _, Just End ) ->
-            renderAlignNode "u" [ Css.alignContainerBottom ] constructor
-
-        _ ->
-            vnode attributes children
+      )
+        |> runFactory parent Single config
+    )
 
 
 renderElement : Layout -> List (Prop msg) -> List (Node msg) -> Layout -> Context -> ( Context, VirtualDom.Node msg )
 renderElement layout props nodes parent context =
     let
         config =
-            applyPropsToConfig (Width Shrink :: Height Shrink :: props)
+            applyPropsToConfig props
 
         ( nextContext, attributes ) =
             applyConfigToContext layout config context
@@ -1129,9 +1167,8 @@ renderElement layout props nodes parent context =
                 nodes
     in
     ( finalContext
-    , initContainer config attributes children
-        |> renderWrappedRowContainer layout config.wrapped
-        |> renderAlignContainer parent config.alignX config.alignY
+    , ( div, attributes, children )
+        |> runFactory parent layout config
     )
 
 
@@ -1144,8 +1181,11 @@ renderHelp parent context node =
         Text txt ->
             renderText txt parent context
 
+        Image alt src props ->
+            renderImage alt src props parent context
+
         Element layout props nodes ->
-            renderElement layout props nodes parent context
+            renderElement layout (Width Shrink :: Height Shrink :: props) nodes parent context
 
 
 renderContext : Context -> VirtualDom.Node msg
