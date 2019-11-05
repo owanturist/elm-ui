@@ -32,6 +32,7 @@ module Element exposing
     , layout
     , left
     , letterSpacing
+    , link
     , maximum
     , minimum
     , monospace
@@ -87,25 +88,32 @@ text =
     Internal.Text
 
 
-el : List (Common {} msg) -> Element msg -> Element msg
+el : List (Common { link : () } msg) -> Element msg -> Element msg
 el attributes child =
     Internal.Element Internal.Single
         (List.map unwrapAttribute attributes)
         [ child ]
 
 
-col : List (Common { spacing : () } msg) -> List (Element msg) -> Element msg
+col : List (Common { link : (), spacing : () } msg) -> List (Element msg) -> Element msg
 col attributes children =
     Internal.Element Internal.Col
         (List.map unwrapAttribute attributes)
         children
 
 
-row : List (Common { spacing : (), wrapped : () } msg) -> List (Element msg) -> Element msg
+row : List (Common { link : (), spacing : (), wrapped : () } msg) -> List (Element msg) -> Element msg
 row attributes children =
     Internal.Element Internal.Row
         (List.map unwrapAttribute attributes)
         children
+
+
+link : String -> Attribute { support | link : () } msg
+link url =
+    url
+        |> Internal.Url
+        |> Attribute
 
 
 

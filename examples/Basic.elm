@@ -6,7 +6,7 @@ import Element exposing (col, el, empty, row, text)
 
 
 main =
-    clipEl
+    linkEl
         |> Element.layout []
 
 
@@ -164,3 +164,15 @@ clipEl =
             , Element.clipX
             , Element.scrollY
             ]
+
+
+linkEl =
+    col
+        [ Element.width (Element.px 200)
+        , Element.height (Element.px 100)
+        , Element.explain Debug.todo
+        , Element.link "https://google.com"
+        , Element.alignY Element.bottom
+        ]
+        [ text "hi"
+        ]

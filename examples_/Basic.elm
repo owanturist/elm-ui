@@ -2,13 +2,13 @@ module Main exposing (main)
 
 {-| -}
 
-import Element exposing (column, el, none, row, text, wrappedRow)
+import Element exposing (column, el, link, none, row, text, wrappedRow)
 import Element.Background as Background
 import Element.Font as Font
 
 
 main =
-    clipEl
+    linkEl
         |> Element.layout []
 
 
@@ -167,3 +167,24 @@ clipEl =
             -- , Element.scrollbars
             , Element.clip
             ]
+
+
+linkEl =
+    column
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        ]
+        [ link
+            [ Element.width (Element.px 200)
+            , Element.height (Element.px 100)
+            , Element.explain Debug.todo
+            , Element.alignBottom
+            ]
+            { url = "https://google.com"
+            , label =
+                row []
+                    [ text "link"
+                    , text "text"
+                    ]
+            }
+        ]

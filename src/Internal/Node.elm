@@ -87,6 +87,7 @@ type Prop msg
     | WordSpacing Float
       -- S P E C I A L   S T A T E
     | Pointer
+    | Url String
 
 
 type Length
@@ -146,6 +147,7 @@ type alias Config msg =
 
     -- S P E C I A L   S T A T E
     , pointer : Bool
+    , url : Maybe String
     }
 
 
@@ -183,6 +185,7 @@ initialConfig =
 
     -- S P E C I A L   S T A T E
     , pointer = False
+    , url = Nothing
     }
 
 
@@ -191,9 +194,14 @@ div =
     VirtualDom.node "div"
 
 
+stringProperty : String -> String -> VirtualDom.Attribute msg
+stringProperty key value =
+    VirtualDom.property key (Encode.string value)
+
+
 class : String -> VirtualDom.Attribute msg
-class className =
-    VirtualDom.property "className" (Encode.string className)
+class =
+    stringProperty "className"
 
 
 classes : List String -> VirtualDom.Attribute msg
@@ -373,6 +381,13 @@ applyPropToConfig prop config =
         -- S P E C I A L   S T A T E
         Pointer ->
             { config | pointer = True }
+
+        Url url ->
+            if isNothing config.url then
+                { config | url = Just url }
+
+            else
+                config
 
 
 applyPropsToConfig : List (Prop msg) -> Config msg
@@ -1004,32 +1019,68 @@ layoutToClass layout =
             layoutColClass
 
 
-renderAlignContainer : String -> List String -> VirtualDom.Node msg -> VirtualDom.Node msg
-renderAlignContainer tag cls vnode =
+type alias VNodeConstructor msg =
+    ( List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VirtualDom.Node msg, List (VirtualDom.Attribute msg), List (VirtualDom.Node msg) )
+
+
+initContainer : Config msg -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> VNodeConstructor msg
+initContainer config attributes children =
+    case config.url of
+        Nothing ->
+            ( div, attributes, children )
+
+        Just url ->
+            ( VirtualDom.node "a"
+            , class "lnk"
+                :: stringProperty "href" url
+                :: stringProperty "rel" "noopener noreferrer"
+                :: attributes
+            , children
+            )
+
+
+renderWrappedRowContainer : Layout -> Maybe Length -> VNodeConstructor msg -> VNodeConstructor msg
+renderWrappedRowContainer layout wrapped ( vnode, attributes, children ) =
+    if isNothing wrapped then
+        ( vnode
+        , layoutToClass layout :: attributes
+        , children
+        )
+
+    else
+        ( vnode
+        , layoutSingleClass :: attributes
+        , [ div [ layoutRowClass, class Css.wrapped ] children
+          ]
+        )
+
+
+renderAlignNode : String -> List String -> VNodeConstructor msg -> VirtualDom.Node msg
+renderAlignNode tag cls ( vnode, attributes, children ) =
     VirtualDom.node tag
         [ classes (Css.container :: Css.any :: Css.single :: cls)
         ]
-        [ vnode
+        [ vnode attributes children
         ]
 
 
-wrapAlignContainer : Layout -> Config msg -> VirtualDom.Node msg -> VirtualDom.Node msg
-wrapAlignContainer layout config vnode =
-    case ( layout, config.alignX, config.alignY ) of
+renderAlignContainer : Layout -> Maybe Alignment -> Maybe Alignment -> VNodeConstructor msg -> VirtualDom.Node msg
+renderAlignContainer parent alignX alignY (( vnode, attributes, children ) as constructor) =
+    case ( parent, alignX, alignY ) of
         ( Row, Just Middle, _ ) ->
-            renderAlignContainer "s" [ Css.contentCenterY, Css.alignContainerCenterX ] vnode
+            renderAlignNode "s" [ Css.contentCenterY, Css.alignContainerCenterX ] constructor
 
         ( Row, Just End, _ ) ->
-            renderAlignContainer "u" [ Css.contentCenterY, Css.alignContainerRight ] vnode
+            renderAlignNode "u" [ Css.contentCenterY, Css.alignContainerRight ] constructor
 
         ( Col, _, Just Middle ) ->
-            renderAlignContainer "s" [ Css.alignContainerCenterY ] vnode
+            renderAlignNode "s" [ Css.alignContainerCenterY ] constructor
 
         ( Col, _, Just End ) ->
-            renderAlignContainer "u" [ Css.alignContainerBottom ] vnode
+            renderAlignNode "u" [ Css.alignContainerBottom ] constructor
 
         _ ->
-            vnode
+            vnode attributes children
 
 
 renderElement : Layout -> List (Prop msg) -> List (Node msg) -> Layout -> Context -> ( Context, VirtualDom.Node msg )
@@ -1050,19 +1101,11 @@ renderElement layout props nodes parent context =
                 )
                 ( nextContext, [] )
                 nodes
-
-        vnode =
-            if isNothing config.wrapped then
-                div (layoutToClass layout :: attributes) children
-
-            else
-                div (layoutSingleClass :: attributes)
-                    [ div [ layoutRowClass, class Css.wrapped ] children
-                    ]
     in
     ( finalContext
-    , vnode
-        |> wrapAlignContainer parent config
+    , initContainer config attributes children
+        |> renderWrappedRowContainer layout config.wrapped
+        |> renderAlignContainer parent config.alignX config.alignY
     )
 
 
