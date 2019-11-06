@@ -75,6 +75,19 @@ import Internal.Node as Internal
 import VirtualDom
 
 
+roundFloat : Int -> Float -> Float
+roundFloat precision num =
+    let
+        n =
+            toFloat (10 ^ precision)
+    in
+    toFloat (round (num * n)) / n
+
+
+
+--
+
+
 type alias Html msg =
     VirtualDom.Node msg
 
@@ -457,7 +470,9 @@ pointer =
 
 alpha : Float -> Property { support | alpha : () } msg
 alpha x =
-    clamp 0 1 x
+    x
+        |> roundFloat 3
+        |> clamp 0 1
         |> Internal.Opacity
         |> Property
 
@@ -479,13 +494,16 @@ rotate deg =
             floor (deg / 360)
     in
     (deg - toFloat (n * 360))
+        |> roundFloat 1
         |> Internal.Rotate
         |> Property
 
 
 scale : Float -> Property { support | scale : () } msg
 scale n =
-    Internal.Scale n
+    n
+        |> roundFloat 2
+        |> Internal.Scale
         |> Property
 
 
@@ -583,7 +601,7 @@ rgba r g b a =
     { r = clamp 0 255 r
     , g = clamp 0 255 g
     , b = clamp 0 255 b
-    , a = clamp 0 1 a
+    , a = clamp 0 1 (roundFloat 3 a)
     }
         |> Color
 
@@ -842,6 +860,7 @@ fontAlign (Alignment alignment) =
 letterSpacing : Float -> Property { support | letterSpacing : () } msg
 letterSpacing offset =
     offset
+        |> roundFloat 1
         |> Internal.LetterSpacing
         |> Property
 
@@ -849,6 +868,7 @@ letterSpacing offset =
 wordSpacing : Float -> Property { support | wordSpacing : () } msg
 wordSpacing offset =
     offset
+        |> roundFloat 1
         |> Internal.WordSpacing
         |> Property
 
