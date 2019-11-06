@@ -6,6 +6,7 @@ import Element exposing (column, download, downloadAs, el, image, link, newTabLi
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Region as Region
 
 
 main =
@@ -208,4 +209,7 @@ imageEl =
         |> wrappedRow
             [ Element.width Element.fill
             , Element.spaceEvenly
+            , Font.extraBold
+            , Font.variant Font.smallCaps
+            , Region.description "hi"
             ]

@@ -191,8 +191,8 @@ imageEl =
         { description = "hola"
         , src = cat
         }
-        |> List.repeat 12
+        |> List.repeat (8 * 8)
         |> row
             [ Element.spacing Element.evenly
-            , Element.wrapped (Element.px 20)
+            , Element.wrapped (Element.px 10)
             ]

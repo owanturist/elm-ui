@@ -3,7 +3,7 @@ module Main exposing (main)
 {-| -}
 
 import Browser
-import Element exposing (col, el, empty, row, text)
+import Element exposing (col, el, empty, image, row, text)
 import Task
 import Time
 
@@ -43,30 +43,54 @@ subscriptions _ =
     Time.every 16 Tick
 
 
+src =
+    "https://images2.minutemediacdn.com/image/upload/c_crop,h_1193,w_2121,x_0,y_64/f_auto,q_auto,w_1100/v1565279671/shape/mentalfloss/578211-gettyimages-542930526.jpg"
+
+
+duration =
+    10000
+
+
 view model =
-    let
-        duration =
-            1000
+    List.range 1 60
+        |> List.map
+            (\i ->
+                let
+                    s =
+                        model.now - i * 100
 
-        t =
-            modBy duration (model.now - model.start)
+                    t =
+                        if s > model.start then
+                            modBy duration (s - model.start)
 
-        angle =
-            if t == 0 then
-                0
+                        else
+                            0
 
-            else
-                toFloat t / duration * 359
-    in
-    el
-        [ Element.width (Element.px 50)
-        , Element.height (Element.px 100)
-        , Element.rotate angle
-        , Element.background (Element.rgb 150 150 150)
-        , Element.explain Debug.todo
-        , Element.align Element.center Element.center
-        ]
-        (text "ok")
+                    angle =
+                        if t == 0 then
+                            0
+
+                        else
+                            toFloat t / duration * 359
+                in
+                el
+                    [ Element.background (Element.rgb 80 80 80)
+                    , Element.height (Element.px 125)
+                    , Element.width (Element.px 1)
+                    , Element.rotate angle
+                    , Element.alignX Element.center
+                    ]
+                    empty
+                    |> el [ Element.width (Element.px 150) ]
+            )
+        |> row
+            [ Element.spacing Element.evenly
+            , Element.wrapped Element.evenly
+            , Element.padding 25
+            , Element.width Element.fill
+            , Element.height Element.fill
+            , Element.background (Element.rgb 40 40 40)
+            ]
         |> Element.layout []
 
 
