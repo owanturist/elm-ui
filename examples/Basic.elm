@@ -188,7 +188,7 @@ imageEl =
         , Element.width (Element.px 200)
         , Element.download "/"
         ]
-        { description = "hola"
+        { alt = "hola"
         , src = cat
         }
         |> List.repeat (8 * 8)

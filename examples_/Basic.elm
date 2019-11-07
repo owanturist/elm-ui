@@ -6,11 +6,12 @@ import Element exposing (column, download, downloadAs, el, image, link, newTabLi
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Input as Input
 import Element.Region as Region
 
 
 main =
-    imageEl
+    inputEl
         |> Element.layout []
 
 
@@ -213,3 +214,38 @@ imageEl =
             , Font.variant Font.smallCaps
             , Region.description "hi"
             ]
+
+
+sliderEl =
+    Input.slider
+        [ Element.height (Element.px 30)
+
+        -- Here is where we're creating/styling the "track"
+        , Element.behindContent
+            (Element.el
+                [ Element.width Element.fill
+                , Element.height (Element.px 2)
+                , Element.centerY
+                , Background.color (Element.rgb255 100 100 100)
+                , Border.rounded 2
+                ]
+                Element.none
+            )
+        ]
+        { onChange = always ()
+        , label = Input.labelAbove [] (text "My Slider Value")
+        , min = 0
+        , max = 75
+        , step = Nothing
+        , value = 50
+        , thumb = Input.defaultThumb
+        }
+
+
+inputEl =
+    Input.spellChecked []
+        { onChange = always ()
+        , text = "hi"
+        , placeholder = Nothing
+        , label = Input.labelHidden "ooooo"
+        }

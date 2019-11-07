@@ -85,7 +85,7 @@ roundFloat precision num =
 
 
 
---
+-- C O M P A T I B I L I T Y
 
 
 type alias Html msg =
@@ -94,6 +94,10 @@ type alias Html msg =
 
 type alias Attribute msg =
     VirtualDom.Attribute msg
+
+
+
+-- E L E M E N T S
 
 
 type alias Element msg =
@@ -161,14 +165,12 @@ indexedTable =
 image :
     List (Common { link : () } msg)
     ->
-        { description : String
+        { alt : String
         , src : String
         }
     -> Element msg
-image attributes { description, src } =
-    Internal.Image description
-        src
-        (List.map unwrapAttribute attributes)
+image attributes { alt, src } =
+    Internal.Image alt src (List.map unwrapAttribute attributes)
 
 
 link : String -> Property { support | link : () } msg
@@ -204,6 +206,184 @@ downloadAs { url, filename } =
     Internal.DownloadFile filename url
         |> Internal.Url
         |> Property
+
+
+autofocus : Property { support | autofocus : () } msg
+autofocus =
+    Debug.todo ""
+
+
+button : List (Property { autofocus : () } msg) -> Element msg -> Element msg
+button =
+    Debug.todo "button"
+
+
+icon : (Bool -> Element msg) -> Property { support | icon : () } msg
+icon =
+    Debug.todo "icon"
+
+
+checkbox : Bool -> Element msg
+checkbox =
+    Debug.todo "checkbox"
+
+
+radio : Bool -> Element msg
+radio =
+    Debug.todo "radio"
+
+
+checked : Bool -> Property { support | checked : () } msg
+checked =
+    Debug.todo "checked"
+
+
+toggle :
+    List (Property { checked : (), icon : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+toggle =
+    Debug.todo "toggle"
+
+
+value : String -> Property { support | value : () } msg
+value =
+    Debug.todo "value"
+
+
+placeholder : Element msg -> Property { support | placeholder : () } msg
+placeholder =
+    Debug.todo "placeholder"
+
+
+spellcheck : Bool -> Property { support | spellcheck : () } msg
+spellcheck =
+    Debug.todo "spellcheck"
+
+
+show : Bool -> Property { support | show : () } msg
+show =
+    Debug.todo "spellcheck"
+
+
+input :
+    List (Property { value : (), placeholder : (), spellcheck : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+input =
+    Debug.todo "input"
+
+
+mulitline :
+    List (Property { value : (), placeholder : (), spellcheck : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+mulitline =
+    Debug.todo "mulitline"
+
+
+username :
+    List (Property { value : (), placeholder : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+username =
+    Debug.todo "username"
+
+
+newPassword :
+    List (Property { value : (), placeholder : (), show : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+newPassword =
+    Debug.todo "newPassword"
+
+
+currentPassword :
+    List (Property { value : (), placeholder : (), show : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+currentPassword =
+    Debug.todo "currentPassword"
+
+
+email :
+    List (Property { value : (), placeholder : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+email =
+    Debug.todo "email"
+
+
+search :
+    List (Property { value : (), placeholder : (), autofocus : () } msg)
+    ->
+        Property
+            { above : ()
+            , onRight : ()
+            , below : ()
+            , onLeft : ()
+            , hidden : ()
+            }
+            msg
+    -> Element msg
+search =
+    Debug.todo "search"
 
 
 
@@ -581,6 +761,13 @@ inFront =
 behind : Element msg -> Property { support | behind : () } msg
 behind =
     Debug.todo "behind"
+
+
+{-| for toggle
+-}
+hidden : String -> Property { support | hidden : () } msg
+hidden =
+    Debug.todo "hidden"
 
 
 
@@ -1204,9 +1391,9 @@ aside =
     Debug.todo "aside"
 
 
-label : String -> Property { support | label : () } msg
-label txt =
-    Debug.todo "label"
+description : String -> Property { support | description : () } msg
+description txt =
+    Debug.todo "description"
 
 
 announce : Bool -> Property { support | announce : () } msg
